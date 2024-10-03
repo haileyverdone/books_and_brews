@@ -1,7 +1,8 @@
 <nav>
-	<a href="/">home</a>
-	<a href="/about">about</a>
+	<a href="/">Home</a>
+	<a href="/explore">Explore</a>
+	<a href="/find">Find</a>
 </nav>
 
-<h1>home</h1>
-<p>this is the home page.</p>
+<h1>Books and Brews</h1>
+
