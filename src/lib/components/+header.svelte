@@ -20,46 +20,37 @@
     .header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       padding: 1rem;
-      background-color: #f7f7f7;
+      background-color: #4b412e;
+      position: relative;
     }
     .logo-container {
-      flex: 1;
+      position: relative;
+      align-items:left;
     }
     .logo {
-      width: 120px;
-      ;
+      width: 180px;
     }
-    .title-container h1{
+    .title-container h1{ 
         text-align: center;
-        margin: 0;
-        color: black;
     }
     .search-bar {
       margin-top: 0.5 rem;
-      width: 60%;
+      width: 150%;
       padding: 0.5rem;
-      border-radius: 8px;
+      border-radius: 10px;
       border: 1px solid black;
-      align-items: center;
-    }
-    .user-actions {
-      display: flex;
-      align-items: center;
     }
     .tabs {
       display: flex;
       justify-content: space-around;
-      background-color: #f0f0f0;
+      background-color: #f5f5f5;
       padding: 1rem;
     }
     .tabs a {
       text-decoration: none;
-      color: #333;
+      color: #0b0b0b;
       font-weight: bold;
-    }
-    main {
-      padding: 1rem;
     }
   </style>
