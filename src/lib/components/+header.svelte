@@ -1,5 +1,6 @@
 
 <header class = "header">
+    <h1>Books & Brews</h1>
     <div class="logo-container">
         <img src="/logo.png" alt ="Books & Brews Logo" class="logo" />
     </div>
