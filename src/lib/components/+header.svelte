@@ -26,9 +26,13 @@
       position: relative;
     }
     .logo-container {
-      position: relative;
-      align-items:left;
+      position: absolute;
+      left: 1rem;
     }
+
+    h1 {
+      font-size: 100px; 
+     }
     .logo {
       width: 180px;
     }
@@ -37,8 +41,9 @@
     }
     .search-bar {
       margin-top: 0.5 rem;
-      width: 150%;
-      padding: 0.5rem;
+      width: 100%;
+      max-width: 600px;
+      padding: 0.5 rem;
       border-radius: 10px;
       border: 1px solid black;
     }
