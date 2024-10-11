@@ -32,6 +32,7 @@
       ;
     }
     .title-container h1{
+        text-align: center;
         margin: 0;
         color: black;
     }
@@ -41,6 +42,7 @@
       padding: 0.5rem;
       border-radius: 8px;
       border: 1px solid black;
+      align-items: center;
     }
     .user-actions {
       display: flex;
