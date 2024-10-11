@@ -1,10 +1,12 @@
 
 <header class = "header">
-    <h1>Books & Brews</h1>
     <div class="logo-container">
         <img src="/logo.png" alt ="Books & Brews Logo" class="logo" />
     </div>
-    <input type="text" placeholder="Search for your favorites..." class="search-bar" />
+    <div class="title-container"> 
+        <h1> Books & Brews</h1>
+        <input type="text" placeholder="Search for your favorite books and coffee..." class="search-bar" />
+    </div>
 </header>
 
 <nav class="tabs">
@@ -23,18 +25,22 @@
       background-color: #f7f7f7;
     }
     .logo-container {
-      display: flex;
-      align-items: center;
+      flex: 1;
     }
     .logo {
       width: 120px;
+      ;
+    }
+    .title-container h1{
+        margin: 0;
+        color: black;
     }
     .search-bar {
-      flex: 1;
-      margin: 0 1rem;
+      margin-top: 0.5 rem;
+      width: 60%;
       padding: 0.5rem;
       border-radius: 8px;
-      border: 1px solid #ccc;
+      border: 1px solid black;
     }
     .user-actions {
       display: flex;
