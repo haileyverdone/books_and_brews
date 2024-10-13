@@ -1,5 +1,5 @@
 <script>
-    import Header from '../lib/components/+header.svelte'; // Import the Header component
+    import Header from '../lib/components/+navbar.svelte'; // Import the Header component
 </script>
 
 <Header />

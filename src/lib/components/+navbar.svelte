@@ -1,15 +1,18 @@
 <script>
   let tabs = [
-    {name: 'Home', icon: 'as fa-home'},
+    {name: 'Home', icon: 'fas fa-home'},
     {name: 'Create', icon: 'fas fa-plus', },
     {name: 'Explore', icon: 'fas fa-search' },
-    {name: 'Events', icon: 'fa-regular fa-calendar' },
+    {name: 'Events', icon: 'far fa-calendar' },
     {name: 'Profile', icon: 'fas fa-user' }
   ];
 
   let activeTab = 'Home';
 
-  function setActiveTab(tabName: string) {
+  /**
+	 * @param {string} tabName
+	 */
+  function setActiveTab(tabName) {
     
     activeTab = tabName;
   }
@@ -17,29 +20,38 @@
 </script>
 
 
-<header class = "header">
-    <div class="logo-container">
+<header class = "navbar">
+    <div class="logo">
         <img src="/logo.png" alt ="Books & Brews Logo" class="logo" />
     </div>
     <div class="title-container"> 
         <h1> Books & Brews</h1>
-        <div class="search-container"></div>
+        <div class="search-container">
           <input type="text" placeholder="Search for your favorite books and coffee..." class="search-bar" />
+        </div>
     </div>
-</header>
-
 
 <nav class="tabs">
   {#each tabs as tab}
     <div
       role="button"
+      tabindex="0"
       class="tab {activeTab === tab.name ? 'active' : ''}"
       on:click={() => setActiveTab(tab.name)}
+      on:keydown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          setActiveTab(tab.name);
+        }
+      }}
     >
       <i class="{tab.icon} tab-icon"></i>
-      </div>
+    </div>
   {/each}
 </nav>
+</header>
+
+
+
 
 <div class="tab-content">
   {#if activeTab === 'Create'}
@@ -57,51 +69,55 @@
 </div>
 
 <style>
-    .header {
-      display: center;
+    .navbar {
+      display:flex;
+      justify-content: space-between;
       align-items: center;
       color: white;      
-      padding: 2rem 1rem;
+      padding: 1rem 2rem;
       background-color: #4b412e;
     }
-    .logo-container {
-      position: absolute;
-      left: 1rem;
+    .logo img {
+      height: 100px;
     }
-
-    h1 {
-      font-size: 100px; 
-      font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif
-     }
-    .logo {
-      width: 250px;
-    }
-    .title-container h1{ 
-        flex: 1;
+    .title-container { 
+        flex-grow: 1;
         text-align: center;
     }
+    .title-container h1 {
+      font-size: 2.5rem;
+      margin: 0;
+      font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    }
     .search-bar {
-      width: 80%;
+      width: 100%;
       max-width: 500px;
-      padding: 0.5rem;
+      padding: 0.75rem;
       border-radius: 8px;
       border: 1px solid #ccc;
-      margin-top: 0.5rem;
+      outline: none;
+      background-color: white;
+      color:black;
     }
     .tabs {
       display: flex;
       justify-content: center;
-      padding: 1rem;
-      background-color: #f0f0f0;
       gap: 1rem;
       
     }
-    .tab-icon {
-      font-size: 32px;
-      color: #0b0b0b;
-      transition: transform 0.3s ease-in-out, color 0.3s;
+    .tab {
+      cursor: pointer;
+      transition: background-color 0.3s ease-in-out;
+
     }
-    .tabs :hover .tab-icon {
+    .tab.active {
+      color: #f0f0f0;
+    }
+    .tab-icon {
+      font-size: 35px;
+      color: #0b0b0b;
+    }
+    .tab :hover .tab-icon{
       transform: scale(1.2);
       color: aqua;
     }
