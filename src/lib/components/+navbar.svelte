@@ -1,10 +1,10 @@
 <script>
   let tabs = [
-    {name: 'Home', icon: 'fas fa-home'},
-    {name: 'Create', icon: 'fas fa-plus', },
-    {name: 'Explore', icon: 'fas fa-search' },
-    {name: 'Events', icon: 'far fa-calendar' },
-    {name: 'Profile', icon: 'fas fa-user' }
+    {name: 'Home', icon: 'bi-house-fill'},
+    {name: 'Create', icon: 'bi-plus-circle-fill', },
+    {name: 'Explore', icon: 'bi-search' },
+    {name: 'Events', icon: 'bi-calendar3' },
+    {name: 'Profile', icon: 'bi-person-fill' }
   ];
 
   let activeTab = 'Home';
@@ -26,9 +26,7 @@
     </div>
     <div class="title-container"> 
         <h1> Books & Brews</h1>
-        <div class="search-container">
-          <input type="text" placeholder="Search for your favorite books and coffee..." class="search-bar" />
-        </div>
+       
     </div>
 
 <nav class="tabs">
@@ -85,7 +83,7 @@
         text-align: center;
     }
     .title-container h1 {
-      font-size: 2.5rem;
+      font-size: 5rem;
       margin: 0;
       font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
     }
@@ -117,8 +115,7 @@
       font-size: 35px;
       color: #0b0b0b;
     }
-    .tab :hover .tab-icon{
-      transform: scale(1.2);
+    .tab-icon:hover {
       color: aqua;
     }
   </style>
