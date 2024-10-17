@@ -65,26 +65,32 @@
       transition:  0.3s ease-in-out;
     }
     .nav-link i {
-      font-size: 1.5 rem;
-      margin-right: 8px;
+      font-size: 2 rem;
+      margin-right: 10px;
     }
     .custom-navbar{
-      background-color: #4b412e;
+      background-color: #3d3932;
       
     }
     .custom-navbar:hover {
-      color: aliceblue;
+      color: pink;
     }
     h1 {
       color: black;
       font-weight:bold;
     }
     .nav-link:hover {
-    color: white;
+    color: pink;
+    }
+    .navbar-collapse {
+      justify-content: flex-end;
     }
     .dropdown-menu {
       right: 0;
       left: auto;
+    }
+    .navbar-nav{
+      text-align: right;
     }
 
   
