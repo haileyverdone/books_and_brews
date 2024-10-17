@@ -76,7 +76,7 @@
       color: pink;
     }
     h1 {
-      color: black;
+      color: pink;
       font-weight:bold;
     }
     .nav-link:hover {
