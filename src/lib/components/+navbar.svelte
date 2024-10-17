@@ -31,7 +31,7 @@
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-    <ul class="navbar-nav">
+    <ul class="navbar-nav ms-auto">
       {#each tabs as tab}
         <li class="nav-item{tab.subtabs ? 'dropdown' : ''}">
           <a
