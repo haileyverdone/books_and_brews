@@ -1,14 +1,8 @@
 <script>
-
-</script>
-<div class="container">
-    <div class="row">
-      <div class="col-md-8">
-        <h1 class="text-primary">Hello, World!</h1>
-        <p class="lead">This is a Bootstrap-styled homepage section.</p>
-      </div>
-      <div class="col-md-4">
-        <button class="btn btn-success">Click Me</button>
-      </div>
-    </div>
+    // Any JavaScript code can go here, but it's fine to leave this empty
+  </script>
+  
+  <!-- Bootstrap Content -->
+  <div class="container mt-5">
   </div>
+  

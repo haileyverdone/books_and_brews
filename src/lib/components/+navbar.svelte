@@ -4,10 +4,10 @@
     {name: 'Create', icon: ' bi bi-plus-circle-fill',href:'/create' },
     {name: 'Explore', icon: ' bi bi-search', href: '/explore' },
     {name: 'Events', icon: ' bi bi-calendar3', href: '/events' },
-    {name: 'Profile', icon: ' bi bi-person-fill' ,href: '/profile' }
+    {name: 'Profile', icon: ' bi bi-person-fill' ,href: '/profile' , subtabs:[{name: 'Register', href:'/register'}, {name:'Log In', href:'/login'}]}
   ];
 
-  let activeTab = 'Home';
+  let activeTab = '';
 
   /**
 	 * @param {string} tabName
@@ -30,16 +30,25 @@
       class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-    <ul class="navbar-nav ms-auto">
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+    <ul class="navbar-nav">
       {#each tabs as tab}
-        <li class="nav-item">
+        <li class="nav-item{tab.subtabs ? 'dropdown' : ''}">
           <a
             class="nav-link {activeTab === tab.name ? 'active' : ''}"
             href={tab.href}
-            on:click={() => setActiveTab(tab.name)} >
+            on:click={() => setActiveTab(tab.name)} 
+            data-bs-toggle={tab.subtabs ? 'dropdown' : ''}
+            aria-expanded="false">
             <i class="{tab.icon}"></i> <span class="d-none d-lg-inline">{tab.name}</span>
           </a>
+          {#if tab.subtabs}
+          <ul class="dropdown-menu dropdown-menu-end">
+            {#each tab.subtabs as subtab}
+              <li><a class="dropdown-item" href={subtab.href}>{subtab.name}</a>
+            {/each}
+          </ul>
+          {/if}
         </li>
       {/each}
     </ul>
@@ -59,15 +68,20 @@
       font-size: 1.5 rem;
       margin-right: 8px;
     }
-    .nav-link.active {
-      color:white;
-    }
     .custom-navbar{
       background-color: #4b412e;
       
     }
+    .custom-navbar:hover {
+      color: aliceblue;
+    }
     h1 {
       color: black;
-      font:bold;
+      font-weight:bold;
     }
-  </style>
+    .nav-link:hover {
+    color: white;
+    }
+
+  
+  </style> 
