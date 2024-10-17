@@ -82,6 +82,10 @@
     .nav-link:hover {
     color: white;
     }
+    .dropdown-menu {
+      right: 0;
+      left: auto;
+    }
 
   
   </style> 
