@@ -33,7 +33,7 @@
     <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
     <ul class="navbar-nav ms-auto">
       {#each tabs as tab}
-        <li class="nav-item{tab.subtabs ? 'dropdown' : ''}">
+        <li class="nav-item {tab.subtabs ? 'dropdown' : ''}">
           <a
             class="nav-link {activeTab === tab.name ? 'active' : ''}"
             href={tab.href}
@@ -85,6 +85,7 @@
     .navbar-collapse {
       justify-content: flex-end;
     }
+    
     .dropdown-menu {
       right: 0;
       left: auto;
@@ -92,6 +93,11 @@
     .navbar-nav{
       text-align: right;
     }
-
+    .nav-item.dropdown .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: auto;
+    }
   
   </style> 
