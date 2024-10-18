@@ -30,7 +30,7 @@
       class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+    <div class="collapse navbar-collapse" id="navbarNav">
     <ul class="navbar-nav ms-auto">
       {#each tabs as tab}
         <li class="nav-item {tab.subtabs ? 'dropdown' : ''}">
@@ -83,21 +83,34 @@
     color: pink;
     }
     .navbar-collapse {
-      justify-content: flex-end;
-    }
-    
-    .dropdown-menu {
-      right: 0;
-      left: auto;
-    }
-    .navbar-nav{
-      text-align: right;
-    }
-    .nav-item.dropdown .dropdown-menu {
+    justify-content: flex-end !important;
+  }
+
+  /* Ensure the navbar toggler (collapsed menu icon) is on the right */
+  .navbar-toggler {
+    margin-left: auto ;
+  }
+
+  /* Navbar items aligned to the right */
+  .navbar-nav {
+    margin-left: auto;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* Dropdown menu aligned to the right */
+  .dropdown-menu {
+    right: 0;
+    left: auto;
+  }
+
+  /* Ensures the dropdown is right-aligned in both expanded and collapsed modes */
+  .nav-item.dropdown .dropdown-menu {
     position: absolute;
     top: 100%;
     right: 0;
     left: auto;
-    }
+  }
+
   
   </style> 
