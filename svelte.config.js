@@ -1,17 +1,9 @@
-import adapter from '@sveltejs/adapter-auto';
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import dotenv from 'dotenv';
+import adapter from '@sveltejs/adapter-auto'; // Make sure the adapter is installed
+import preprocess  from 'svelte-preprocess'; // Import preprocess
 
-dotenv.config();
-
-/** @type {import('@sveltejs/kit').Config} */
-const config = {
-	preprocess: vitePreprocess(),
-
-	kit: {
-		adapter: adapter(),
-
-	}
+export default {
+  preprocess: preprocess(), // Use preprocess for Svelte files
+  kit: {
+    adapter: adapter(), // Use the adapter for your deployment
+  },
 };
-
-export default config;

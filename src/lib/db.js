@@ -1,12 +1,13 @@
 import postgres from 'postgres';
+import dotenv from 'dotenv';
 
-// Check if PGCONNECT is defined, or throw an error
+dotenv.config(); 
+
 const connectionString = process.env.PGCONNECT;
 if (!connectionString) {
   throw new Error('PGCONNECT environment variable is not defined');
 }
 
-// Connect to PostgreSQL using the connection string
-const sql = postgres(connectionString);
+const db = postgres(connectionString);
 
-export default sql;
+export default db;
