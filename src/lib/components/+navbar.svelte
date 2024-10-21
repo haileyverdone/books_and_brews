@@ -45,7 +45,7 @@
           {#if tab.subtabs}
           <ul class="dropdown-menu dropdown-menu-end">
             {#each tab.subtabs as subtab}
-              <li><a class="dropdown-item" href={subtab.href}>{subtab.name}</a>
+              <li><a class="dropdown-item" href={subtab.href}>{subtab.name}</a></li>
             {/each}
           </ul>
           {/if}
@@ -86,25 +86,23 @@
     justify-content: flex-end !important;
   }
 
-  /* Ensure the navbar toggler (collapsed menu icon) is on the right */
+
   .navbar-toggler {
     margin-left: auto ;
   }
 
-  /* Navbar items aligned to the right */
   .navbar-nav {
     margin-left: auto;
     display: flex;
     justify-content: flex-end;
   }
 
-  /* Dropdown menu aligned to the right */
+
   .dropdown-menu {
     right: 0;
     left: auto;
   }
 
-  /* Ensures the dropdown is right-aligned in both expanded and collapsed modes */
   .nav-item.dropdown .dropdown-menu {
     position: absolute;
     top: 100%;
