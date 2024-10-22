@@ -1,27 +1,24 @@
-import sql from '$lib/db'; // Import your database connection
+import db from '$lib/db/db.js'; // Ensure this path is correct
 
-// Define a function to handle login
-export async function POST(request) {
-  const { email, password } = await request.json();
-
+export async function GET() {
   try {
-    const result = await sql`
-      SELECT * FROM users WHERE email = ${email}
-    `;
+    // Example query to check the database connection
+    const result = await db`SELECT NOW()`;
 
-    if (result.length === 0) {
-      return new Response(JSON.stringify({ error: 'User not found' }), {
-        status: 404,
-      });
-    }
-
-    const user = result[0];
-    // Here, you would typically compare the password with a hashed version
-    // If the password is valid, proceed with login
-    return new Response(JSON.stringify({ user }), { status: 200 });
+    // Return the current time from the database
+    return new Response(JSON.stringify({ time: result }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Database error' }), {
+    console.error('Database error:', error); // Log any error that occurs
+    return new Response(JSON.stringify({ error: 'Database connection failed' }), {
       status: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
   }
 }
