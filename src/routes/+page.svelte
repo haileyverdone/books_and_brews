@@ -32,6 +32,7 @@
     .carousel-inner {
       height: 500px;
       position: relative;
+      z-index: 0;
     }
   
     .carousel-inner{

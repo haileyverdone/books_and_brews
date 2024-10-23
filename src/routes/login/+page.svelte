@@ -1,46 +1,31 @@
 <script>
-  import { onMount } from 'svelte';
-  let email = '';
+  let username = '';
   let password = '';
-  let errorMessage = '';
+  let error = '';
 
-  async function login(event) {
-    event.preventDefault(); // Prevent the default form submission
+  async function handleLogin() {
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('password', password);
 
-    // Perform validation
-    if (!email || !password) {
-      errorMessage = 'Email and password are required';
-      return;
-    }
+    const response = await fetch('/login', {
+      method: 'POST',
+      body: formData
+    });
 
-    // Send login request to your API
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (response.ok) {
-        // Handle successful login (e.g., redirect or show success message)
-        console.log('Login successful!');
-      } else {
-        const data = await response.json();
-        errorMessage = data.error || 'Login failed';
-      }
-    } catch (error) {
-      errorMessage = 'An error occurred: ' + error.message;
+    if (response.ok) {
+      window.location.href = '/profile';
+    } else {
+      error = 'Login failed. Try again.';
     }
   }
 </script>
 
-<form on:submit|preventDefault={login}>
-  <input type="email" placeholder="Email" bind:value={email} required />
-  <input type="password" placeholder="Password" bind:value={password} required />
+<form on:submit|preventDefault={handleLogin}>
+  <input type="text" bind:value={username} placeholder="Username" required />
+  <input type="password" bind:value={password} placeholder="Password" required />
   <button type="submit">Login</button>
-  {#if errorMessage}
-    <p style="color: red;">{errorMessage}</p>
+  {#if error}
+    <p>{error}</p>
   {/if}
 </form>

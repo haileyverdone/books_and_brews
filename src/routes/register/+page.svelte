@@ -1,52 +1,31 @@
 <script>
-  import { onMount } from 'svelte';
-  let email = '';
+  let username = '';
   let password = '';
-  let confirmPassword = '';
-  let errorMessage = '';
+  let error = '';
 
-  async function register(event) {
-    event.preventDefault(); // Prevent the default form submission
+  async function handleRegister() {
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('password', password);
 
-    // Perform validation
-    if (!email || !password || !confirmPassword) {
-      errorMessage = 'All fields are required';
-      return;
-    }
-    if (password !== confirmPassword) {
-      errorMessage = 'Passwords do not match';
-      return;
-    }
+    const response = await fetch('/register', {
+      method: 'POST',
+      body: formData
+    });
 
-    // Send registration request to your API
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (response.ok) {
-        // Handle successful registration (e.g., redirect or show success message)
-        console.log('Registration successful!');
-      } else {
-        const data = await response.json();
-        errorMessage = data.error || 'Registration failed';
-      }
-    } catch (error) {
-      errorMessage = 'An error occurred: ' + error.message;
+    if (response.ok) {
+      window.location.href = '/login';
+    } else {
+      error = 'Registration failed.';
     }
   }
 </script>
 
-<form on:submit|preventDefault={register}>
-  <input type="email" placeholder="Email" bind:value={email} required />
-  <input type="password" placeholder="Password" bind:value={password} required />
-  <input type="password" placeholder="Confirm Password" bind:value={confirmPassword} required />
+<form on:submit|preventDefault={handleRegister}>
+  <input type="text" bind:value={username} placeholder="Username" required />
+  <input type="password" bind:value={password} placeholder="Password" required />
   <button type="submit">Register</button>
-  {#if errorMessage}
-    <p style="color: red;">{errorMessage}</p>
+  {#if error}
+    <p>{error}</p>
   {/if}
 </form>
