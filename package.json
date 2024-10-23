@@ -32,6 +32,7 @@
 	"dependencies": {
 		"@auth/core": "^0.37.2",
 		"@auth/sveltekit": "^1.7.2",
+		"@supabase/supabase-js": "^2.45.6",
 		"bcrypt": "^5.1.1",
 		"bcryptjs": "^2.4.3",
 		"cookie": "^1.0.1",

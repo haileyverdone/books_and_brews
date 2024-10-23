@@ -1,28 +1,26 @@
 <script>
-  let username = '';
+  import { supabase } from '$lib/supabase';
+
+  let email = '';
   let password = '';
   let error = '';
 
-  async function handleRegister() {
-    const formData = new FormData();
-    formData.append('username', username);
-    formData.append('password', password);
-
-    const response = await fetch('/register', {
-      method: 'POST',
-      body: formData
-    });
-
-    if (response.ok) {
+  async function register() {
+    try {
+      const { user, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      if (signUpError) throw signUpError;
       window.location.href = '/login';
-    } else {
-      error = 'Registration failed.';
+    } catch (err) {
+      error = err.message;
     }
   }
 </script>
 
-<form on:submit|preventDefault={handleRegister}>
-  <input type="text" bind:value={username} placeholder="Username" required />
+<form on:submit|preventDefault={register}>
+  <input type="email" bind:value={email} placeholder="Email" required />
   <input type="password" bind:value={password} placeholder="Password" required />
   <button type="submit">Register</button>
   {#if error}

@@ -1,28 +1,26 @@
 <script>
-  let username = '';
+  import { supabase } from '$lib/supabase';
+
+  let email = '';
   let password = '';
   let error = '';
 
-  async function handleLogin() {
-    const formData = new FormData();
-    formData.append('username', username);
-    formData.append('password', password);
-
-    const response = await fetch('/login', {
-      method: 'POST',
-      body: formData
-    });
-
-    if (response.ok) {
+  async function login() {
+    try {
+      const { user, error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (loginError) throw loginError;
       window.location.href = '/profile';
-    } else {
-      error = 'Login failed. Try again.';
+    } catch (err) {
+      error = err.message;
     }
   }
 </script>
 
-<form on:submit|preventDefault={handleLogin}>
-  <input type="text" bind:value={username} placeholder="Username" required />
+<form on:submit|preventDefault={login}>
+  <input type="email" bind:value={email} placeholder="Email" required />
   <input type="password" bind:value={password} placeholder="Password" required />
   <button type="submit">Login</button>
   {#if error}
