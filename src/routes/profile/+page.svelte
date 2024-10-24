@@ -11,16 +11,5 @@
       user = data.session.user;
     }
   });
-
-  function handleLogout() {
-    supabase.auth.signOut();
-    window.location.href = '/login';
-  }
 </script>
 
-{#if user}
-  <h1>Welcome, {user.email}</h1>
-  <button on:click={handleLogout}>Logout</button>
-{:else}
-  <p>Loading...</p>
-{/if}
