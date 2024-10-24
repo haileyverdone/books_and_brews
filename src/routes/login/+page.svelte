@@ -4,30 +4,34 @@
   let email = '';
   let password = '';
   let errorMessage = '';
-  let isLoading = false;  // Loading state
 
   async function handleLogin() {
-    isLoading = true;  // Set loading to true when login begins
-    errorMessage = ''; // Clear previous errors
-
-    const { user, error } = await supabase.auth.signInWithPassword({
+    // Authenticate the user using Supabase
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    isLoading = false;  // Set loading to false after login attempt
-
-    if (error) {
-      errorMessage = error.message;
-    } else if (user) {
-      window.location.href = '/';  // Redirect to home on successful login
+    if (signInError) {
+      // Display an error if login fails
+      errorMessage = signInError.message;
     } else {
-      errorMessage = 'Unexpected error occurred. Please try again.'; 
+      // On successful login, fetch the session details
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        errorMessage = 'Failed to retrieve session details';
+        return;
+      }
+
+      if (sessionData.session) {
+        // Store the session or user info if needed
+        window.location.href = '/profile';  // Redirect to the profile page after successful login
+      }
     }
   }
 </script>
 
-<!-- Login Form -->
 <div class="login-container">
   <h1>Log In</h1>
   <form on:submit|preventDefault={handleLogin}>
@@ -41,13 +45,7 @@
       <input id="password" type="password" bind:value={password} required />
     </div>
 
-    <button type="submit" disabled={isLoading}>
-      {#if isLoading}
-        Logging in...
-      {:else}
-        Log In
-      {/if}
-    </button>
+    <button type="submit">Log In</button>
 
     {#if errorMessage}
       <p class="error">{errorMessage}</p>
@@ -56,6 +54,7 @@
 
   <p>Don't have an account? <a href="/register">Sign Up</a></p>
 </div>
+
 
 <!-- Styles -->
 <style>

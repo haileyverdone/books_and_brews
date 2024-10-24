@@ -1,6 +1,5 @@
 <script>
   import { supabase } from '$lib/supabase';
-  import bcrypt from 'bcryptjs';
 
   let name = '';
   let username = '';
@@ -9,34 +8,42 @@
   let errorMessage = '';
 
   async function handleSignup() {
-    // Sign up the user
-    const { user, error } = await supabase.auth.signUp({
+    errorMessage = '';  // Clear previous error messages
+
+    // Ensure all fields are filled
+    if (!name || !username || !email || !password) {
+      errorMessage = 'All fields are required.';
+      return;
+    }
+
+    // Create the user with email and password authentication via Supabase
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     });
 
-    if (error) {
-      errorMessage = error.message;
+    if (signUpError) {
+      errorMessage = signUpError.message;
       return;
     }
 
-    if (user) {
-      // Hash the password before saving it to the profiles table
-      const hashedPassword = await bcrypt.hash(password, 10);
+    // Get the newly signed-up user's data (id, etc.)
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-      // Insert the user's profile information into the 'profiles' table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([{ id: user.id, name, username, email, password: hashedPassword }]);
+    if (userError) {
+      errorMessage = 'Error fetching user data: ' + userError.message;
+      return;
+    }
 
-      if (profileError) {
-        errorMessage = 'Error inserting profile: ' + profileError.message;
-        return;
-      }
+    // Insert additional profile info into the 'profiles' table
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([{ id: user.id, name, username, email, password }]); // Add profile data
 
-      window.location.href = '/login';  // Redirect to login after successful registration
+    if (profileError) {
+      errorMessage = 'Error inserting profile: ' + profileError.message;
     } else {
-      errorMessage = 'User information is missing. Please try again.';
+      window.location.href = '/login'; // Redirect to login after successful signup
     }
   }
 </script>
