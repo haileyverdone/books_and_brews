@@ -1,14 +1,15 @@
 <script>
   import { supabase } from '$lib/supabase';
   import bcrypt from 'bcryptjs';
-  
-  let name ='';
+
+  let name = '';
   let username = '';
   let email = '';
   let password = '';
   let errorMessage = '';
 
   async function handleSignup() {
+    // Sign up the user
     const { user, error } = await supabase.auth.signUp({
       email,
       password,
@@ -16,18 +17,26 @@
 
     if (error) {
       errorMessage = error.message;
-    } else {
+      return;
+    }
+
+    if (user) {
+      // Hash the password before saving it to the profiles table
       const hashedPassword = await bcrypt.hash(password, 10);
 
+      // Insert the user's profile information into the 'profiles' table
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([{ id: user.id, name, username, email, password: hashedPassword }]);
 
       if (profileError) {
-        console.error('Error inserting profile:', profileError);
-      } else {
-        window.location.href = '/login'; 
+        errorMessage = 'Error inserting profile: ' + profileError.message;
+        return;
       }
+
+      window.location.href = '/login';  // Redirect to login after successful registration
+    } else {
+      errorMessage = 'User information is missing. Please try again.';
     }
   }
 </script>
@@ -60,8 +69,6 @@
     {/if}
   </form>
 
-
-
   <p>Already have an account? <a href="/login">Log In</a></p>
 </div>
 
@@ -74,7 +81,7 @@
     max-width: 500px;
     padding: 2rem;
     border: 1px solid #ccc;
-    border-radius:8px;
+    border-radius: 8px;
     background-color: pink;
     margin-top: 3rem;
   }
@@ -82,7 +89,6 @@
   h1 {
     font-size: 2rem;
     margin-bottom: 1.5rem;
-   
   }
 
   .form-group {

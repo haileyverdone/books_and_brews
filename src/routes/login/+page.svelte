@@ -4,17 +4,25 @@
   let email = '';
   let password = '';
   let errorMessage = '';
+  let isLoading = false;  // Loading state
 
   async function handleLogin() {
-    const { user, error } = await supabase.auth.signIn({
+    isLoading = true;  // Set loading to true when login begins
+    errorMessage = ''; // Clear previous errors
+
+    const { user, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
+    isLoading = false;  // Set loading to false after login attempt
+
     if (error) {
       errorMessage = error.message;
+    } else if (user) {
+      window.location.href = '/';  // Redirect to home on successful login
     } else {
-      window.location.href = '/profile';  // Redirect to profile after login
+      errorMessage = 'Unexpected error occurred. Please try again.'; 
     }
   }
 </script>
@@ -33,7 +41,13 @@
       <input id="password" type="password" bind:value={password} required />
     </div>
 
-    <button type="submit">Log In</button>
+    <button type="submit" disabled={isLoading}>
+      {#if isLoading}
+        Logging in...
+      {:else}
+        Log In
+      {/if}
+    </button>
 
     {#if errorMessage}
       <p class="error">{errorMessage}</p>
@@ -43,6 +57,7 @@
   <p>Don't have an account? <a href="/register">Sign Up</a></p>
 </div>
 
+<!-- Styles -->
 <style>
   .login-container {
     display: flex;
@@ -55,7 +70,6 @@
     border-radius: 8px;
     background-color: pink;
     margin-top: 3rem;
-
   }
 
   h1 {
@@ -92,7 +106,12 @@
     cursor: pointer;
   }
 
-  button:hover {
+  button:disabled {
+    background-color: grey;
+    cursor: not-allowed;
+  }
+
+  button:hover:enabled {
     background-color: grey;
   }
 
