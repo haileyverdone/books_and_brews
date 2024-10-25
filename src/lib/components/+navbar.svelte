@@ -39,7 +39,7 @@
   }
 </script>
 
-<div class="background-wrapper">
+<div class="background">
   <nav class="navbar navbar-expand-lg navbar-dark custom-navbar">
     <div class="container-fluid">
       <a class="navbar-brand" href="/">
@@ -88,15 +88,6 @@
 
 <style>
 
-
-  .background-wrapper {
-  background-color: white;  
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-  min-height:200px;
-  margin: 0 auto;
-  width: 100%;  
-  z-index: 1000; 
-  }
   .nav-link {
     display: flex;
     align-items: center;
@@ -112,10 +103,10 @@
 
   .custom-navbar {
     background-color: grey;
- 
     padding: 0.75rem 1rem;
     width: 100%;  
     margin: 0 auto;  
+    border-bottom: 10px;
   }
 
   h1 {
@@ -146,10 +137,5 @@
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0,0,0,1);
     z-index: 2000;
-  }
-  @media (max-width: 992px) {
-    .nav-link {
-      font-size: 0.9rem;
-    }
   }
 </style>
