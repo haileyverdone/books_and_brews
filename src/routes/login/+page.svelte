@@ -22,8 +22,8 @@
     }
 
     if (sessionData.session) {
-      const userId = sessionData.session.user.id;  // Get the user ID
-      window.location.href = `/profile/${userId}`;  // Redirect to user-specific profile
+      const userId = sessionData.session.user.id;  
+      window.location.href = `/profile/${userId}`; 
     }
   }
 }

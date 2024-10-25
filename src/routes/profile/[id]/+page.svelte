@@ -7,9 +7,9 @@
   let errorMessage = '';  
 
   onMount(async () => {
-    const { params } = $page;  // Get the user ID from the URL params
+    const { params } = $page;  
 
-    // Fetch user profile data using the ID from the URL
+  
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
