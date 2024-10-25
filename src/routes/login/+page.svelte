@@ -6,30 +6,27 @@
   let errorMessage = '';
 
   async function handleLogin() {
-    // Authenticate the user using Supabase
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-    if (signInError) {
-      // Display an error if login fails
-      errorMessage = signInError.message;
-    } else {
-      // On successful login, fetch the session details
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (signInError) {
+    errorMessage = signInError.message;
+  } else {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
-      if (sessionError) {
-        errorMessage = 'Failed to retrieve session details';
-        return;
-      }
+    if (sessionError) {
+      errorMessage = 'Failed to retrieve session details';
+      return;
+    }
 
-      if (sessionData.session) {
-        // Store the session or user info if needed
-        window.location.href = '/profile';  // Redirect to the profile page after successful login
-      }
+    if (sessionData.session) {
+      const userId = sessionData.session.user.id;  // Get the user ID
+      window.location.href = `/profile/${userId}`;  // Redirect to user-specific profile
     }
   }
+}
 </script>
 
 <div class="login-container">
@@ -56,15 +53,15 @@
 </div>
 
 
-<!-- Styles -->
+
 <style>
   .login-container {
-    display: flex;
+    display: flexbox;
     flex-direction: column;
     align-items: center;
     margin: auto;
-    max-width: 400px;
-    padding: 1rem;
+    max-width: 500px;
+    padding: 2rem;
     border: 1px solid #ccc;
     border-radius: 8px;
     background-color: pink;

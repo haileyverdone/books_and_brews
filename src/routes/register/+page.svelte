@@ -8,15 +8,14 @@
   let errorMessage = '';
 
   async function handleSignup() {
-    errorMessage = '';  // Clear previous error messages
+    errorMessage = '';  
 
-    // Ensure all fields are filled
     if (!name || !username || !email || !password) {
       errorMessage = 'All fields are required.';
       return;
     }
 
-    // Create the user with email and password authentication via Supabase
+    
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -27,7 +26,6 @@
       return;
     }
 
-    // Get the newly signed-up user's data (id, etc.)
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError) {
@@ -35,20 +33,19 @@
       return;
     }
 
-    // Insert additional profile info into the 'profiles' table
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert([{ id: user.id, name, username, email, password }]); // Add profile data
+      .insert([{ id: user.id, name, username, email, password }]); 
 
     if (profileError) {
       errorMessage = 'Error inserting profile: ' + profileError.message;
     } else {
-      window.location.href = '/login'; // Redirect to login after successful signup
+      window.location.href = '/login'; 
     }
   }
 </script>
 
-<!-- Signup Form -->
+
 <div class="signup-container">
   <h1>Sign Up</h1>
   <form on:submit|preventDefault={handleSignup}>

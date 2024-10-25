@@ -1,42 +1,29 @@
 <script>
   import { onMount } from 'svelte';
   import { supabase } from '$lib/supabase';
+  import { page } from '$app/stores';
 
-  let profile = null;  // Store profile data
-  let errorMessage = '';  // Store error messages
+  let profile = null;  
+  let errorMessage = '';  
 
-  // Function to fetch user profile data
-  async function fetchUserProfile() {
-    // Get the session of the current logged-in user
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  onMount(async () => {
+    const { params } = $page;  // Get the user ID from the URL params
 
-    // If there is no session or error, redirect to login
-    if (!sessionData || !sessionData.session || sessionError) {
-      window.location.href = '/login';
-      return;
-    }
-
-    const userId = sessionData.session.user.id; // Get the user id
-
-    // Fetch profile data from the Supabase 'profiles' table
+    // Fetch user profile data using the ID from the URL
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('id', params.id)
       .single();
 
     if (profileError) {
       errorMessage = 'Error fetching profile data';
     } else {
-      profile = profileData;  // Store the fetched profile data
+      profile = profileData;  
     }
-  }
-
-  // When the component mounts, fetch the user profile
-  onMount(fetchUserProfile);
+  });
 </script>
 
-<!-- Profile Page -->
 {#if profile}
   <div class="profile-page">
     <h1>Welcome, {profile.name}!</h1>
