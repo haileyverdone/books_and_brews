@@ -1,32 +1,31 @@
 <script>
-  import { supabase } from '$lib/supabase';
-  
   let email = '';
   let password = '';
   let errorMessage = '';
 
   async function handleLogin() {
-  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+    errorMessage = '';
 
-  if (signInError) {
-    errorMessage = signInError.message;
-  } else {
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    try {
+      const response = await fetch('src/routes/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
 
-    if (sessionError) {
-      errorMessage = 'Failed to retrieve session details';
-      return;
-    }
+      const data = await response.json();
 
-    if (sessionData.session) {
-      const userId = sessionData.session.user.id;  
-      window.location.href = `/profile/${userId}`; 
+      if (!response.ok) {
+        throw new Error(data.error || 'Invalid email or password');
+      }
+
+      // Redirect to user dashboard or profile page after successful login
+      window.location.href = `/profile/${data.uid}`;
+
+    } catch (err) {
+      errorMessage = err.message;
     }
   }
-}
 </script>
 
 <div class="login-container">
@@ -36,7 +35,6 @@
       <label for="email">Email</label>
       <input id="email" type="email" bind:value={email} required />
     </div>
-    
     <div class="form-group">
       <label for="password">Password</label>
       <input id="password" type="password" bind:value={password} required />
@@ -48,10 +46,7 @@
       <p class="error">{errorMessage}</p>
     {/if}
   </form>
-
-  <p>Don't have an account? <a href="/register">Sign Up</a></p>
 </div>
-
 
 
 <style>

@@ -1,11 +1,11 @@
 <script>
+  import { getAuth , onAuthStateChanged, signOut} from 'firebase/auth';
   import { onMount } from 'svelte';
-  import { supabase } from '$lib/supabase';
+  import app from '$lib/firebaseConfig';
 
   let isLoggedIn = false;
   let userEmail = '';
   let userId = '';
-  let user = null;
   let tabs = [
     { name: 'Home', icon: 'bi bi-house-fill', href: '/' },
     { name: 'Create', icon: 'bi bi-plus-circle-fill', href: '/create' },
@@ -15,29 +15,36 @@
 
   let activeTab = '';
 
-  onMount(async () => {
-    const { data } = await supabase.auth.getSession();
+  const auth = getAuth(app); // Initialize Firebase auth
 
-    if (data.session) {
-      isLoggedIn = true;
-      user = data.session.user;
-      userEmail = user.email;
-      userId = user.id;
-    }
+  // Check user authentication state on mount
+  onMount(() => {
+    onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        isLoggedIn = true;
+        userEmail = currentUser.email;
+        userId = currentUser.uid; // Firebase user ID
+      } else {
+        isLoggedIn = false;
+        userEmail = '';
+        userId = '';
+      }
+    });
   });
 
   async function handleLogout() {
-    await supabase.auth.signOut();
+    await signOut(auth); // Sign out using Firebase
     isLoggedIn = false;
     userEmail = '';
-    userId='';
-    window.location.href = '/';  
+    userId = '';
+    window.location.href = '/'; // Redirect to home page
   }
 
   function setActiveTab(tabName) {
     activeTab = tabName;
   }
 </script>
+
 
 <div class="background">
   <nav class="navbar navbar-expand-lg navbar-dark custom-navbar">
@@ -64,7 +71,6 @@
         </li>
         {/each}
 
-        
         <li class="nav-item dropdown">
           <button class="btn btn-link nav-link dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-person-fill"></i> Profile

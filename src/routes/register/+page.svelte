@@ -1,5 +1,5 @@
 <script>
-  import { supabase } from '$lib/supabase';
+  import { register } from '$lib/auth.js'; // Firebase register function
 
   let name = '';
   let username = '';
@@ -8,43 +8,43 @@
   let errorMessage = '';
 
   async function handleSignup() {
-    errorMessage = '';  
+    errorMessage = '';
 
     if (!name || !username || !email || !password) {
       errorMessage = 'All fields are required.';
       return;
     }
 
-    
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    try {
+      // Register user with Firebase
+      const user = await register(email, password);
 
-    if (signUpError) {
-      errorMessage = signUpError.message;
-      return;
-    }
+      // Send user data to your server-side API to insert into PostgreSQL
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firebase_uid: user.uid,
+          name,
+          username,
+          email
+        })
+      });
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const data = await response.json();
 
-    if (userError) {
-      errorMessage = 'Error fetching user data: ' + userError.message;
-      return;
-    }
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create user profile');
+      }
 
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert([{ id: user.id, name, username, email, password }]); 
+      // Redirect to login page after successful registration
+      window.location.href = '/login';
 
-    if (profileError) {
-      errorMessage = 'Error inserting profile: ' + profileError.message;
-    } else {
-      window.location.href = '/login'; 
+    } catch (err) {
+      errorMessage = err.message;
     }
   }
 </script>
-
 
 <div class="signup-container">
   <h1>Sign Up</h1>
@@ -75,6 +75,7 @@
 
   <p>Already have an account? <a href="/login">Log In</a></p>
 </div>
+
 
 <style>
   .signup-container {

@@ -1,25 +1,24 @@
 <script>
   import { onMount } from 'svelte';
-  import { supabase } from '$lib/supabase';
-  import { page } from '$app/stores';
+  import { page } from '$app/stores'; // Access route params
 
-  let profile = null;  
-  let errorMessage = '';  
+  let profile = null;
+  let errorMessage = '';
 
   onMount(async () => {
-    const { params } = $page;  
+    const { params } = $page; // Access the route parameter `id` from the URL
 
-  
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', params.id)
-      .single();
+    try {
+      const response = await fetch(`/profile/${params.id}`);
+      const data = await response.json();
 
-    if (profileError) {
-      errorMessage = 'Error fetching profile data';
-    } else {
-      profile = profileData;  
+      if (!response.ok) {
+        throw new Error(data.error || 'Error fetching profile data');
+      }
+
+      profile = data.profile; // Set the profile data if fetch is successful
+    } catch (err) {
+      errorMessage = err.message; // Capture and display any error message
     }
   });
 </script>
@@ -31,7 +30,7 @@
     <p>Email: {profile.email}</p>
   </div>
 {:else if errorMessage}
-  <p>{errorMessage}</p>
+  <p class="error">{errorMessage}</p>
 {:else}
   <p>Loading profile data...</p>
 {/if}
@@ -50,5 +49,10 @@
 
   p {
     font-size: 1.2rem;
+  }
+
+  .error {
+    color: red;
+    font-weight: bold;
   }
 </style>
