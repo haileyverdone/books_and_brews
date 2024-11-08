@@ -39,6 +39,7 @@
 		"cookie": "^1.0.1",
 		"dotenv": "^16.4.5",
 		"firebase": "^11.0.1",
+		"firebase-admin": "^12.7.0",
 		"pg": "^8.13.1",
 		"postgres": "^3.4.4"
 	}

@@ -7,7 +7,7 @@
     errorMessage = '';
 
     try {
-      const response = await fetch('src/routes/api/login', {
+      const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -18,6 +18,8 @@
       if (!response.ok) {
         throw new Error(data.error || 'Invalid email or password');
       }
+
+      localStorage.setItem('authToken', data.token);
 
       // Redirect to user dashboard or profile page after successful login
       window.location.href = `/profile/${data.uid}`;

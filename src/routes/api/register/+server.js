@@ -1,6 +1,8 @@
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import app from '$lib/firebaseConfig';
-import { Client } from 'pg'; // Using PostgreSQL 'pg' library
+import pkg from 'pg';
+
+const { Client } = pkg; // Import the PostgreSQL client from the CommonJS module
 
 const auth = getAuth(app);
 
@@ -17,7 +19,7 @@ export async function POST({ request }) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const firebaseUID = userCredential.user.uid;
 
-    // Insert the user into the PostgreSQL database
+    // Connect to PostgreSQL and insert the user data
     await client.connect();
     const insertQuery = `
       INSERT INTO profiles (firebase_uid, name, username, email) 
@@ -27,16 +29,26 @@ export async function POST({ request }) {
     await client.end();
 
     // Return success response
-    return {
-      status: 201,
-      body: { message: 'Registration successful' },
-    };
+    return new Response(
+      JSON.stringify({ message: 'Registration successful' }),
+      {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   } catch (error) {
     console.error('Error registering user:', error);
+
+    // Close the client if an error occurs
     await client.end();
-    return {
-      status: 500,
-      body: { error: 'Failed to register user' },
-    };
+
+    // Return error response
+    return new Response(
+      JSON.stringify({ error: 'Failed to register user' }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   }
 }

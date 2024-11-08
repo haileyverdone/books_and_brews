@@ -1,33 +1,35 @@
-// src/routes/api/profile/[id].js (server-side API route)
-import pkg from 'pg';
-const { Client } = pkg;
+import admin from 'firebase-admin';
+import { Client } from 'pg';
 
-const client = new Client({
-  connectionString: process.env.PGCONNECT,
-});
+if (!admin.apps.length) {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_CREDENTIALS); // Your Firebase Admin credentials
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+}
 
-export async function GET({ params }) {
-  await client.connect();
+export async function GET({ params, request }) {
+  const authHeader = request.headers.get('Authorization');
+  const token = authHeader?.split(' ')[1]; // Extract the token
+
+  if (!token) {
+    return { status: 401, body: { error: 'Unauthorized' } };
+  }
+
   try {
-    const res = await client.query('SELECT * FROM profiles WHERE firebase_uid = $1', [params.id]);
+    // Verify Firebase token
+    const decodedToken = await admin.auth().verifyIdToken(token);
+
+    // Connect to PostgreSQL
+    const client = new Client({ connectionString: process.env.PGCONNECT });
+    await client.connect();
+    
+    // Example query
+    const res = await client.query('SELECT * FROM profiles WHERE firebase_uid = $1', [decodedToken.uid]);
     await client.end();
 
-    if (res.rows.length === 0) {
-      return {
-        status: 404,
-        body: { error: 'Profile not found' },
-      };
-    } else {
-      return {
-        status: 200,
-        body: { profile: res.rows[0] },
-      };
-    }
+    return { status: 200, body: res.rows[0] };
   } catch (error) {
-    console.error(error);
-    return {
-      status: 500,
-      body: { error: 'Server error fetching profile data' },
-    };
+    return { status: 500, body: { error: 'Server error' } };
   }
 }
