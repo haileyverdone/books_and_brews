@@ -7,36 +7,22 @@ export async function POST({ request }) {
   const { email, password } = await request.json();
 
   try {
-    // Sign in the user with Firebase Auth
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Generate an ID token for the signed-in user
+    // Include Firebase ID token if needed for client use
     const token = await user.getIdToken();
 
-    // Return the response with user details and token
     return new Response(
-      JSON.stringify({
-        uid: user.uid,
-        email: user.email,
-        message: 'Login successful',
-        token: token
-      }), 
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({ uid: user.uid, email: user.email, token, message: 'Login successful' }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Login error:', error);
 
-    // Return error response
     return new Response(
-      JSON.stringify({ error: 'Invalid email or password' }), 
-      {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({ error: 'Invalid email or password' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }
