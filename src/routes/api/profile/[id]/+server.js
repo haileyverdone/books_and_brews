@@ -1,10 +1,33 @@
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import admin from 'firebase-admin';
 import app from '$lib/firebaseConfig';
 
 const db = getFirestore(app);
 
-export async function GET({ params }) {
+// Initialize Firebase Admin if not already initialized
+if (!admin.apps.length) {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_CREDENTIAL);
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
+
+export async function GET({ params, request }) {
+  const authHeader = request.headers.get('Authorization');
+  const token = authHeader && authHeader.split(' ')[1]; // Extract the token from the Authorization header
+
+  if (!token) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized - Token missing' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
+    // Verify the token using Firebase Admin
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    
+    // Fetch the user profile from Firestore
     const userDoc = await getDoc(doc(db, 'users', params.id));
 
     if (userDoc.exists()) {
