@@ -1,19 +1,11 @@
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
-import app from '$lib/firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '$lib/firebaseConfig'; // Ensure db is correctly initialized in firebaseConfig
 
-const db = getFirestore(app);
-
-export async function saveUserProfile(uid, name, username, email) {
+async function saveUserDataToFirestore(uid, name, username, email) {
   try {
-    await setDoc(doc(db, 'profiles', uid), { name, username, email });
+    await setDoc(doc(db, 'users', uid), { name, username, email });
+    console.log('User data saved to Firestore successfully');
   } catch (error) {
-    console.error('Error saving profile to Firestore:', error);
-    throw error;
+    console.error('Error saving user data to Firestore:', error);
   }
-}
-
-export async function getUserProfile(uid) {
-  const docRef = doc(db, 'profiles', uid);
-  const docSnap = await getDoc(docRef);
-  return docSnap.exists() ? docSnap.data() : null;
 }

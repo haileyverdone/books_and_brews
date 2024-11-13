@@ -1,47 +1,33 @@
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import app from '$lib/firebaseConfig';
-import { doc, setDoc, getFirestore } from 'firebase/firestore';
+import { firestoreAdmin } from '$lib/firebaseAdmin';
 
 const auth = getAuth(app);
-const db = getFirestore(app);
-
-async function saveUserDataToFirestore(uid, name, username, email) {
-  try {
-    await setDoc(doc(db, 'users', uid), { name, username, email });
-    console.log('User data saved to Firestore successfully');
-  } catch (error) {
-    console.error('Error saving user data to Firestore:', error);
-    throw error; // Rethrow error to catch it in the main POST handler if needed
-  }
-}
 
 export async function POST({ request }) {
-  try {
-    const { name, username, email, password } = await request.json();
-    console.log('Received registration data:', { name, username, email });
+  const { name, username, email, password } = await request.json();
 
-    // Register the user in Firebase Auth
+  try {
+    // Register user in Firebase Authentication
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const firebaseUID = userCredential.user.uid;
-    console.log('User registered in Firebase Auth with UID:', firebaseUID);
 
-    // Save user data to Firestore
-    await saveUserDataToFirestore(firebaseUID, name, username, email);
+    // Save user data to Firestore using Firebase Admin
+    await firestoreAdmin.collection('users').doc(firebaseUID).set({
+      name,
+      username,
+      email
+    });
 
-    // Return a success response
+    // Return success response
     return new Response(
       JSON.stringify({ message: 'Registration successful' }),
       { status: 201, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error during user registration or Firestore save:', error);
-
-    const errorMessage = error.code === 'auth/email-already-in-use'
-      ? 'Email is already in use'
-      : 'Failed to register user';
-
+    console.error('Error registering user:', error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Failed to register user' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
