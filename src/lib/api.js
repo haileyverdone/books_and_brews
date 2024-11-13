@@ -1,12 +1,17 @@
-import { fetchProtectedData } from '$lib/api';
+export async function fetchWithAuth(endpoint) {
+  const token = localStorage.getItem('authToken');
 
-let profileData = null;
-let errorMessage = '';
+  const response = await fetch(endpoint, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
+  });
 
-onMount(async () => {
-  try {
-    profileData = await fetchProtectedData('/api/profile');
-  } catch (error) {
-    errorMessage = error.message;
+  if (!response.ok) {
+    throw new Error('Failed to fetch protected data');
   }
-});
+
+  return response.json();
+}

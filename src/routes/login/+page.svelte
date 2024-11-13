@@ -19,16 +19,18 @@
         throw new Error(data.error || 'Invalid email or password');
       }
 
+      // Store the token in localStorage for authenticated requests
       localStorage.setItem('authToken', data.token);
 
-      // Redirect to user dashboard or profile page after successful login
+      // Redirect to the profile page using the user ID
       window.location.href = `/profile/${data.uid}`;
-
     } catch (err) {
       errorMessage = err.message;
+      console.error('Login error:', err); // Debugging info
     }
   }
 </script>
+
 
 <div class="login-container">
   <h1>Log In</h1>

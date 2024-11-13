@@ -1,24 +1,39 @@
 <script>
   import { onMount } from 'svelte';
-  import { page } from '$app/stores'; // Access route params
+  import { page } from '$app/stores';
 
   let profile = null;
   let errorMessage = '';
 
   onMount(async () => {
-    const { params } = $page; // Access the route parameter `id` from the URL
+    const { params } = $page;
+
+    if (!params.id) {
+      errorMessage = 'No profile ID provided.';
+      return;
+    }
 
     try {
-      const response = await fetch(`/profile/${params.id}`);
+      const token = localStorage.getItem('authToken'); // Retrieve the token
+
+      const response = await fetch(`/api/profile/${params.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Add the token to the request headers
+        }
+      });
+
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'Error fetching profile data');
       }
 
-      profile = data.profile; // Set the profile data if fetch is successful
+      profile = data.profile;
     } catch (err) {
-      errorMessage = err.message; // Capture and display any error message
+      errorMessage = err.message;
+      console.error('Error in fetching profile:', err); // Debug log
     }
   });
 </script>

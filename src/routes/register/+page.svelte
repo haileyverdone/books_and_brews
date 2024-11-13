@@ -1,25 +1,14 @@
 <script>
-  import { register } from '$lib/auth.js'; // Firebase register function
-
   let name = '';
   let username = '';
   let email = '';
   let password = '';
   let errorMessage = '';
 
-  async function handleSignup() {
+  async function handleRegister() {
     errorMessage = '';
 
-    if (!name || !username || !email || !password) {
-      errorMessage = 'All fields are required.';
-      return;
-    }
-
     try {
-      // Register user with Firebase
-      const user = await register(email, password);
-
-      // Send user data to your server-side API to insert into PostgreSQL
       const response = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -29,21 +18,21 @@
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create user profile');
+        throw new Error(data.error || 'Error registering user');
       }
 
-      // Redirect to login page after successful registration
+      // Redirect to the login page after successful registration
       window.location.href = '/login';
-
     } catch (err) {
       errorMessage = err.message;
+      console.error('Registration error:', err); // Debugging info
     }
   }
 </script>
 
 <div class="signup-container">
   <h1>Sign Up</h1>
-  <form on:submit|preventDefault={handleSignup}>
+  <form on:submit|preventDefault={handleRegister}>
     <div class="form-group">
       <label for="name">Name</label>
       <input id="name" type="text" bind:value={name} required />
