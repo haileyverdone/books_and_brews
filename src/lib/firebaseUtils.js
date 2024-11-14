@@ -1,4 +1,3 @@
-// firebaseUtils.js
 import { auth, db } from './firebaseConfig';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';

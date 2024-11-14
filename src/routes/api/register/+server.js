@@ -1,8 +1,10 @@
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import app from '$lib/firebaseConfig';
-import { firestoreAdmin } from '$lib/firebaseAdmin';
 
+// Initialize Firebase Authentication and Firestore
 const auth = getAuth(app);
+const firestore = getFirestore(app);
 
 export async function POST({ request }) {
   const { name, username, email, password } = await request.json();
@@ -12,8 +14,8 @@ export async function POST({ request }) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const firebaseUID = userCredential.user.uid;
 
-    // Save user data to Firestore using Firebase Admin
-    await firestoreAdmin.collection('users').doc(firebaseUID).set({
+    // Save user data to Firestore using Firestore Client SDK
+    await setDoc(doc(firestore, 'users', firebaseUID), {
       name,
       username,
       email,
