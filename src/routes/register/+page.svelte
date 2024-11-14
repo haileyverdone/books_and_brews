@@ -1,4 +1,7 @@
 <script>
+  import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+
   let name = '';
   let username = '';
   let email = '';
@@ -6,26 +9,26 @@
   let errorMessage = '';
 
   async function handleRegister() {
-    errorMessage = '';
-
     try {
       const response = await fetch('/api/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ name, username, email, password })
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error registering user');
+        throw new Error(data.error || 'Failed to register user');
       }
 
-      // Redirect to the login page after successful registration
-      window.location.href = '/login';
-    } catch (err) {
-      errorMessage = err.message;
-      console.error('Registration error:', err); // Debugging info
+      // Redirect to login or home page on success
+      await goto('/login'); // or redirect to another page if needed
+    } catch (error) {
+      errorMessage = error.message;
+      console.error('Error during registration:', error);
     }
   }
 </script>

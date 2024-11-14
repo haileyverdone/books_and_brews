@@ -16,7 +16,8 @@ export async function POST({ request }) {
     await firestoreAdmin.collection('users').doc(firebaseUID).set({
       name,
       username,
-      email
+      email,
+      createdAt: new Date()
     });
 
     // Return success response

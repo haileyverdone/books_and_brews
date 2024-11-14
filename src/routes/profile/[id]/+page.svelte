@@ -1,39 +1,44 @@
 <script>
-  import { onMount } from 'svelte';
-  import { page } from '$app/stores';
+  import { onMount } from "svelte";
+  import { page } from "$app/stores";
 
   let profile = null;
-  let errorMessage = '';
+  let errorMessage = "";
 
   onMount(async () => {
-    const { params } = $page;
+    const params = $page.params;
 
     if (!params.id) {
-      errorMessage = 'No profile ID provided.';
+      errorMessage = "No profile ID provided.";
       return;
     }
 
     try {
-      const token = localStorage.getItem('authToken'); // Retrieve the token
+      const token = localStorage.getItem("authToken");
+
+      if (!token) {
+        errorMessage = "You need to be logged in to view this profile.";
+        return;
+      }
 
       const response = await fetch(`/api/profile/${params.id}`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // Add the token to the request headers
-        }
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error fetching profile data');
+        throw new Error(data.error || "Error fetching profile data");
       }
 
       profile = data.profile;
     } catch (err) {
       errorMessage = err.message;
-      console.error('Error in fetching profile:', err); // Debug log
+      console.error("Error in fetching profile:", err);
     }
   });
 </script>

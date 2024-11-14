@@ -1,11 +1,14 @@
 <script>
-  import { getAuth , onAuthStateChanged, signOut} from 'firebase/auth';
+ import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+  import { getFirestore, doc, getDoc } from 'firebase/firestore';
   import { onMount } from 'svelte';
-  import app from '$lib/firebaseConfig';
+  import app, { db } from '$lib/firebaseConfig';
+
 
   let isLoggedIn = false;
   let userEmail = '';
   let userId = '';
+  let userProfile = {}; // Store additional profile data
   let tabs = [
     { name: 'Home', icon: 'bi bi-house-fill', href: '/' },
     { name: 'Create', icon: 'bi bi-plus-circle-fill', href: '/create' },
@@ -16,6 +19,24 @@
   let activeTab = '';
 
   const auth = getAuth(app); // Initialize Firebase auth
+  const firestore = getFirestore(app); // Initialize Firestore
+
+  // Fetch additional profile information from Firestore
+  async function fetchUserProfile(uid) {
+    try {
+      const userDocRef = doc(firestore, "users", uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        userProfile = userDoc.data(); // Update userProfile with Firestore data
+        console.log("Fetched user profile:", userProfile);
+      } else {
+        console.log("No profile found for this user.");
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  }
 
   // Check user authentication state on mount
   onMount(() => {
@@ -23,11 +44,15 @@
       if (currentUser) {
         isLoggedIn = true;
         userEmail = currentUser.email;
-        userId = currentUser.uid; // Firebase user ID
+        userId = currentUser.uid;
+
+        // Fetch additional profile information from Firestore
+        fetchUserProfile(userId);
       } else {
         isLoggedIn = false;
         userEmail = '';
         userId = '';
+        userProfile = {}; // Reset profile data on logout
       }
     });
   });
@@ -37,6 +62,7 @@
     isLoggedIn = false;
     userEmail = '';
     userId = '';
+    userProfile = {};
     window.location.href = '/'; // Redirect to home page
   }
 
