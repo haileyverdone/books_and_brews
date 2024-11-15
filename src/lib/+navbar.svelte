@@ -1,14 +1,13 @@
 <script>
- import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-  import { getFirestore, doc, getDoc } from 'firebase/firestore';
+  import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+  import { doc, getDoc } from 'firebase/firestore';
   import { onMount } from 'svelte';
   import app, { db } from '$lib/firebaseConfig';
-
 
   let isLoggedIn = false;
   let userEmail = '';
   let userId = '';
-  let userProfile = {}; // Store additional profile data
+  let userProfile = {};
   let tabs = [
     { name: 'Home', icon: 'bi bi-house-fill', href: '/' },
     { name: 'Create', icon: 'bi bi-plus-circle-fill', href: '/create' },
@@ -16,61 +15,60 @@
     { name: 'Events', icon: 'bi bi-calendar3', href: '/events' },
   ];
 
-  let activeTab = '';
+  let activeTab = ''; // Store the currently active tab
+  const auth = getAuth(app);
 
-  const auth = getAuth(app); // Initialize Firebase auth
-  const firestore = getFirestore(app); // Initialize Firestore
+  // Set the active tab based on user click
+  function setActiveTab(tabName) {
+    activeTab = tabName;
+  }
 
-  // Fetch additional profile information from Firestore
+  // Check user authentication state on mount
+  onMount(() => {
+    console.log("Auth listener initialized.");
+    onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        isLoggedIn = true;
+        userEmail = currentUser.email;
+        userId = currentUser.uid;
+        console.log("Logged in as:", userEmail);
+        fetchUserProfile(userId);
+      } else {
+        isLoggedIn = false;
+        userEmail = '';
+        userId = '';
+        userProfile = {};
+        console.log("User is logged out.");
+      }
+    });
+  });
+
+  // Fetch additional profile information
   async function fetchUserProfile(uid) {
     try {
-      const userDocRef = doc(firestore, "users", uid);
+      const userDocRef = doc(db, "users", uid);
       const userDoc = await getDoc(userDocRef);
-
       if (userDoc.exists()) {
-        userProfile = userDoc.data(); // Update userProfile with Firestore data
+        userProfile = userDoc.data();
         console.log("Fetched user profile:", userProfile);
       } else {
-        console.log("No profile found for this user.");
+        console.log("No profile found.");
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
     }
   }
 
-  // Check user authentication state on mount
-  onMount(() => {
-    onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        isLoggedIn = true;
-        userEmail = currentUser.email;
-        userId = currentUser.uid;
-
-        // Fetch additional profile information from Firestore
-        fetchUserProfile(userId);
-      } else {
-        isLoggedIn = false;
-        userEmail = '';
-        userId = '';
-        userProfile = {}; // Reset profile data on logout
-      }
-    });
-  });
-
   async function handleLogout() {
-    await signOut(auth); // Sign out using Firebase
+    await signOut(auth);
     isLoggedIn = false;
     userEmail = '';
     userId = '';
     userProfile = {};
-    window.location.href = '/'; // Redirect to home page
+    window.location.href = '/';
   }
 
-  function setActiveTab(tabName) {
-    activeTab = tabName;
-  }
 </script>
-
 
 <div class="background">
   <nav class="navbar navbar-expand-lg navbar-dark custom-navbar">
@@ -88,12 +86,15 @@
 
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
-        <!-- Render Navigation Tabs -->
         {#each tabs as tab}
-        <li class="nav-item">
-          <a class="nav-link {activeTab === tab.name ? 'active' : ''}" href={tab.href} on:click={() => setActiveTab(tab.name)}>
-            <i class="{tab.icon}"></i> <span class="d-none d-lg-inline">{tab.name}</span>
-          </a>
+          <li class="nav-item">
+            <a
+              class="nav-link {activeTab === tab.name ? 'active' : ''}"
+              href={tab.href}
+              on:click={() => setActiveTab(tab.name)}
+            >
+              <i class="{tab.icon}"></i> <span class="d-none d-lg-inline">{tab.name}</span>
+            </a>
         </li>
         {/each}
 
@@ -107,7 +108,9 @@
               <li><a class="dropdown-item" href="/register">Register</a></li>
             {:else}
               <li><span class="dropdown-item">Logged in as {userEmail}</span></li>
-              <li><a class="dropdown-item" href={`/profile/${userId}`}>View Profile</a></li>
+              {#if userProfile.name}
+                <li><a class="dropdown-item" href={`/profile/${userId}`}>View Profile</a></li>
+              {/if}
               <li><button class="dropdown-item" on:click={handleLogout}>Log Out</button></li>
             {/if}
           </ul>
@@ -117,9 +120,7 @@
   </nav>
 </div>
 
-
 <style>
-
   .nav-link {
     display: flex;
     align-items: center;
