@@ -10,22 +10,27 @@
 
     if (!params.id) {
       errorMessage = "No profile ID provided.";
+      console.error(errorMessage);
       return;
     }
 
     try {
+      // Get the authentication token from localStorage
       const token = localStorage.getItem("authToken");
 
       if (!token) {
         errorMessage = "You need to be logged in to view this profile.";
+        console.error(errorMessage);
         return;
       }
+
+      console.log(`Fetching profile for ID: ${params.id}`);
 
       const response = await fetch(`/api/profile/${params.id}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`, // Send token for authorization
         },
       });
 
@@ -36,9 +41,10 @@
       }
 
       profile = data.profile;
+      console.log("Fetched profile data:", profile);
     } catch (err) {
       errorMessage = err.message;
-      console.error("Error in fetching profile:", err);
+      console.error("Error fetching profile:", err);
     }
   });
 </script>
@@ -51,8 +57,6 @@
   </div>
 {:else if errorMessage}
   <p class="error">{errorMessage}</p>
-{:else}
-  <p>Loading profile data...</p>
 {/if}
 
 <style>

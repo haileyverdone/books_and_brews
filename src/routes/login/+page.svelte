@@ -1,4 +1,6 @@
 <script>
+  import { goto } from '$app/navigation';
+
   let email = '';
   let password = '';
   let errorMessage = '';
@@ -15,18 +17,25 @@
 
       const data = await response.json();
 
+      if(response.ok) {
+        localStorage.setItem('authToken', data.token);  
+        //redirect to user profile
+        await goto(`/profile/${data.uid}`);
+       }
+
       if (!response.ok) {
         throw new Error(data.error || 'Invalid email or password');
       }
 
-      // Store the token in localStorage for authenticated requests
-      localStorage.setItem('authToken', data.token);
+      if (data.message === 'Email not verified') {
+        errorMessage = 'Your email is not verified. Please check your inbox.';
+        return; 
+      }
 
-      // Redirect to the profile page using the user ID
-      window.location.href = `/profile/${data.uid}`;
+     
     } catch (err) {
       errorMessage = err.message;
-      console.error('Login error:', err); // Debugging info
+      console.error('Login error:', err); 
     }
   }
 </script>

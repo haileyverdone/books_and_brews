@@ -8,6 +8,11 @@
   let userEmail = '';
   let userId = '';
   let userProfile = {};
+  let activeTab = ''; // Store the currently active tab
+
+  const auth = getAuth(app);
+
+  // Navigation tabs
   let tabs = [
     { name: 'Home', icon: 'bi bi-house-fill', href: '/' },
     { name: 'Create', icon: 'bi bi-plus-circle-fill', href: '/create' },
@@ -15,42 +20,21 @@
     { name: 'Events', icon: 'bi bi-calendar3', href: '/events' },
   ];
 
-  let activeTab = ''; // Store the currently active tab
-  const auth = getAuth(app);
-
-  // Set the active tab based on user click
+  // Set the active tab
   function setActiveTab(tabName) {
     activeTab = tabName;
+    console.log("Setting active tab to:", tabName);
   }
 
-  // Check user authentication state on mount
-  onMount(() => {
-    console.log("Auth listener initialized.");
-    onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        isLoggedIn = true;
-        userEmail = currentUser.email;
-        userId = currentUser.uid;
-        console.log("Logged in as:", userEmail);
-        fetchUserProfile(userId);
-      } else {
-        isLoggedIn = false;
-        userEmail = '';
-        userId = '';
-        userProfile = {};
-        console.log("User is logged out.");
-      }
-    });
-  });
-
-  // Fetch additional profile information
+  // Fetch user profile
   async function fetchUserProfile(uid) {
     try {
+      console.log("Fetching user profile for ID:", uid); // Debugging log
       const userDocRef = doc(db, "users", uid);
       const userDoc = await getDoc(userDocRef);
       if (userDoc.exists()) {
         userProfile = userDoc.data();
-        console.log("Fetched user profile:", userProfile);
+        console.log("Fetched profile data:", userProfile); // Debugging log
       } else {
         console.log("No profile found.");
       }
@@ -59,6 +43,29 @@
     }
   }
 
+  // Handle authentication state
+  onMount(() => {
+    console.log("Setting up auth state listener...");
+    onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        console.log("Auth state changed: User is logged in."); // Debugging log
+        isLoggedIn = true;
+        userEmail = currentUser.email;
+        userId = currentUser.uid;
+        console.log("User logged in as:", { isLoggedIn, userEmail, userId }); // Debugging log
+        fetchUserProfile(userId);
+      } else {
+        console.log("Auth state changed: User is logged out."); // Debugging log
+        isLoggedIn = false;
+        userEmail = '';
+        userId = '';
+        userProfile = {};
+      }
+    });
+  });
+  $: console.log("isLoggedIn:", isLoggedIn, "userEmail:", userEmail);
+
+  // Logout function
   async function handleLogout() {
     await signOut(auth);
     isLoggedIn = false;
@@ -68,7 +75,11 @@
     window.location.href = '/';
   }
 
+  // Log the current state for debugging
+  $: console.log("Current auth state:", { isLoggedIn, userEmail, userProfile });
+  $: console.log("Current active tab:", activeTab);
 </script>
+
 
 <div class="background">
   <nav class="navbar navbar-expand-lg navbar-dark custom-navbar">
@@ -95,7 +106,7 @@
             >
               <i class="{tab.icon}"></i> <span class="d-none d-lg-inline">{tab.name}</span>
             </a>
-        </li>
+          </li>
         {/each}
 
         <li class="nav-item dropdown">
@@ -103,15 +114,17 @@
             <i class="bi bi-person-fill"></i> Profile
           </button>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-            {#if !isLoggedIn}
-              <li><a class="dropdown-item" href="/login">Log In</a></li>
-              <li><a class="dropdown-item" href="/register">Register</a></li>
-            {:else}
+            {#if isLoggedIn}
               <li><span class="dropdown-item">Logged in as {userEmail}</span></li>
-              {#if userProfile.name}
+              {#if userProfile && userProfile.name}
                 <li><a class="dropdown-item" href={`/profile/${userId}`}>View Profile</a></li>
+              {:else}
+                <li><span class="dropdown-item">Loading profile...</span></li>
               {/if}
               <li><button class="dropdown-item" on:click={handleLogout}>Log Out</button></li>
+            {:else}
+              <li><a class="dropdown-item" href="/login">Log In</a></li>
+              <li><a class="dropdown-item" href="/register">Register</a></li>
             {/if}
           </ul>
         </li>

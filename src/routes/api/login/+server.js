@@ -1,15 +1,16 @@
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import app from '$lib/firebaseConfig';
-
-const auth = getAuth(app);
+import { login } from '../../../lib/auth.js';
 
 export async function POST({ request }) {
   const { email, password } = await request.json();
 
   try {
-    // Sign in the user with Firebase Auth
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    // Sign in the user with Firebase Auth through the `login` function
+    const userCredential = await login(email, password);
     const user = userCredential.user;
+
+    if (!user.emailVerified) {
+      throw new Error('Email not verified. Please check your inbox for the verification email.');
+    }
 
     // Generate a token on successful login
     const token = await user.getIdToken();
@@ -22,7 +23,7 @@ export async function POST({ request }) {
   } catch (error) {
     console.error('Login error:', error);
     return new Response(
-      JSON.stringify({ error: 'Invalid email or password' }),
+      JSON.stringify({ error: error.message || 'Invalid email or password' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     );
   }

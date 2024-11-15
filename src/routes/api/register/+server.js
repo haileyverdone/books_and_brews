@@ -1,30 +1,32 @@
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
-import app from '$lib/firebaseConfig';
-
-// Initialize Firebase Authentication and Firestore
-const auth = getAuth(app);
-const firestore = getFirestore(app);
+import { register, saveUserProfile } from '../../../lib/auth.js'; 
 
 export async function POST({ request }) {
   const { name, username, email, password } = await request.json();
 
   try {
-    // Register user in Firebase Authentication
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const firebaseUID = userCredential.user.uid;
+    // Register the user and get user credentials
+    const userCredential = await register(email, password);
+    const user = userCredential.user;
 
-    // Save user data to Firestore using Firestore Client SDK
-    await setDoc(doc(firestore, 'users', firebaseUID), {
+    if (!user) {
+      throw new Error('User creation failed.');
+    }
+
+    // Send verification email
+    await sendEmailVerification(user);
+    console.log(`Verification email sent to: ${email}`);
+
+    // Save user's additional profile data to Firestore
+    await saveUserProfile(user.uid, {
       name,
       username,
       email,
-      createdAt: new Date()
+      createdAt: new Date(),
     });
 
     // Return success response
     return new Response(
-      JSON.stringify({ message: 'Registration successful' }),
+      JSON.stringify({ message: 'Registration successful. Please verify your email!' }),
       { status: 201, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
