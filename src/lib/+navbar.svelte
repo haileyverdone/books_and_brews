@@ -1,16 +1,15 @@
 <script>
   import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
   import { doc, getDoc } from 'firebase/firestore';
-  import { onMount } from 'svelte';
   import app, { db } from '$lib/firebaseConfig';
+  import { authState } from '$lib/stores';
 
-  let isLoggedIn = false;
-  let userEmail = '';
-  let userId = '';
-  let userProfile = {};
-  let activeTab = ''; // Store the currently active tab
+  let isLoggedIn = false, userEmail = '', uid = '', userProfile = null;
+  let activeTab = '';
 
   const auth = getAuth(app);
+
+  $: ({ isLoggedIn, userEmail, uid, userProfile } = $authState);
 
   // Navigation tabs
   let tabs = [
@@ -29,55 +28,55 @@
   // Fetch user profile
   async function fetchUserProfile(uid) {
     try {
-      console.log("Fetching user profile for ID:", uid); // Debugging log
       const userDocRef = doc(db, "users", uid);
       const userDoc = await getDoc(userDocRef);
       if (userDoc.exists()) {
-        userProfile = userDoc.data();
-        console.log("Fetched profile data:", userProfile); // Debugging log
+       return userDoc.data();
       } else {
         console.log("No profile found.");
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
+      return null;
     }
   }
 
-  // Handle authentication state
-  onMount(() => {
-    console.log("Setting up auth state listener...");
-    onAuthStateChanged(auth, (currentUser) => {
+ 
+    onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        console.log("Auth state changed: User is logged in."); // Debugging log
-        isLoggedIn = true;
-        userEmail = currentUser.email;
-        userId = currentUser.uid;
-        console.log("User logged in as:", { isLoggedIn, userEmail, userId }); // Debugging log
-        fetchUserProfile(userId);
+        const userProfile = await fetchUserProfile(currentUser.uid); // Fetch user profile from Firestore
+      authState.set({
+        isLoggedIn: true,
+        userEmail: currentUser.email,
+        uid: currentUser.uid,
+        userProfile: userProfile || null,
+      });
       } else {
-        console.log("Auth state changed: User is logged out."); // Debugging log
-        isLoggedIn = false;
-        userEmail = '';
-        userId = '';
-        userProfile = {};
+        authState.set({
+          isLoggedIn: false,
+          userEmail: '',
+          uid: '',
+          userProfile: null,
+        });
       }
     });
-  });
-  $: console.log("isLoggedIn:", isLoggedIn, "userEmail:", userEmail);
+
 
   // Logout function
   async function handleLogout() {
     await signOut(auth);
-    isLoggedIn = false;
-    userEmail = '';
-    userId = '';
-    userProfile = {};
+    authState.set({
+    isLoggedIn: false,
+    userEmail: '',
+    uid : '',
+    userProfile: null,
+    })
     window.location.href = '/';
   }
 
   // Log the current state for debugging
-  $: console.log("Current auth state:", { isLoggedIn, userEmail, userProfile });
-  $: console.log("Current active tab:", activeTab);
+  $: console.log('Current auth state:', { isLoggedIn, userEmail, uid, userProfile });
+  $: console.log('Current active tab:', activeTab);
 </script>
 
 
@@ -118,7 +117,7 @@
             {#if isLoggedIn}
               <li><span class="dropdown-item">Logged in as {userEmail}</span></li>
               {#if userProfile && userProfile.name}
-                <li><a class="dropdown-item" href={`/profile/${userId}`}>View Profile</a></li>
+                <li><a class="dropdown-item" href={`/profile/${uid}`}>View Profile</a></li>
               {:else}
                 <li><span class="dropdown-item">Loading profile...</span></li>
               {/if}

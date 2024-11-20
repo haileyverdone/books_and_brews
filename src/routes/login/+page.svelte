@@ -1,30 +1,41 @@
 <script>
   import { goto } from '$app/navigation';
+  import {getAuth, signInWithEmailAndPassword} from 'firebase/auth';
 
+  const auth = getAuth();
   let email = '';
-  let password = '';
+  let password = ''; 
   let errorMessage = '';
 
   async function handleLogin() {
+    const auth = getAuth();
     errorMessage = '';
 
     try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      if (!user.emailVerified) {
+        errorMessage = 'Email not verified. Please check your inbox.';
+        return;
+      }
+
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email}),
       });
 
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data.error || 'Invalid email or password');
       }
 
       localStorage.setItem('authToken', data.token); // Store the token
+      
       await goto(`/profile/${data.uid}`); // Redirect to the profile page
     } catch (err) {
-      errorMessage = err.message; // Display the error message
+      errorMessage = err.message || 'An error occured during login.'; // Display the error message
       console.error('Login error:', err);
     }
   }

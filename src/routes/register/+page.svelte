@@ -1,5 +1,6 @@
 <script>
   import { goto } from '$app/navigation';
+  import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 
   let name = '';
   let username = '';
@@ -9,33 +10,36 @@
   let message = '';
 
   async function handleRegister() {
+    const auth = getAuth();
+    errorMessage = '';
+    message = '';
 
     try {
+      //create user
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      //send verification email
+      await sendEmailVerification(user);
+
+      //save additonal user data
       const response = await fetch('/api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name, username, email, password })
+        body: JSON.stringify({ name, username, email, uid: user.uid, }),
       });
       
-      const data = await response.json();
-
       if (!response.ok) {
-        message = data.message ||'Registration Succesful! Please verify your email address.';
-        console.log(message);
-
-        setTimeout(() => goto('/login'), 3000); 
-      } else {
-        
-        throw new Error(data.error || 'Failed to register user');
+        throw new Error('Failed to save user profile.');
       }
-
-      
+      message = 'Registration successful! Please verify your email. Redirecting to login...';
+      setTimeout(() => goto('/login'), 3000);
     } catch (error) {
-      errorMessage = error.message;
-      console.error('Error during registration:', error);
-    }
+      errorMessage = error.message || 'An error occurred during registration.';
+      console.error('Registration error:', error);
+      }
   }
 </script>
 

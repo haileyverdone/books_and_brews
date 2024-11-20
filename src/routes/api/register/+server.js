@@ -1,38 +1,39 @@
-import { register, saveUserProfile,sendEmailVerification } from '../../../lib/auth.js'; 
+import { adminFirestore } from '$lib/firebaseAdmin'; 
+import admin from 'firebase-admin';
 
 export async function POST({ request }) {
-  const { name, username, email, password } = await request.json();
+    try{
+      const body  = await request.json();
+      const { name, username, email, uid} = body;
 
-  try {
-    // Register the user and get user credentials
-    const userCredential = await register(email, password);
-    const user = userCredential.user;
+      if (!name || !username || !email || !uid) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required fields' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
 
-    if (!user) {
-      throw new Error('User creation failed.');
-    }
-
-    // Send verification email
-    await sendEmailVerification(user);
-    console.log(`Verification email sent to: ${email}`);
-
-    // Save user's additional profile data to Firestore
-    await saveUserProfile(user.uid, {
-      name,
-      username,
-      email,
-      createdAt: new Date(),
-    });
-
-    // Return success response
+        await adminFirestore.collection('users').doc(uid).set({
+          name,
+          username,
+          email,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        
     return new Response(
       JSON.stringify({ message: 'Registration successful. Please verify your email!' }),
       { status: 201, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error registering user:', error);
+    let clientMessage = 'Failed to register user.';
+    if (error.code === 'auth/email-already-in-use') {
+      clientMessage = 'This email is already registered. Please log in.';
+    } else if (error.code === 'auth/invalid-email') {
+      clientMessage = 'Invalid email address. Please check and try again.';
+    }
     return new Response(
-      JSON.stringify({ error: 'Failed to register user' }),
+      JSON.stringify({ error: clientMessage }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }

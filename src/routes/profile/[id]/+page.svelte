@@ -1,50 +1,45 @@
 <script>
   import { onMount } from "svelte";
-  import { page } from "$app/stores";
+  import { getAuth } from "firebase/auth";
 
   let profile = null;
   let errorMessage = "";
 
-  onMount(async () => {
-    const params = $page.params;
-
-    if (!params.id) {
-      errorMessage = "No profile ID provided.";
-      console.error(errorMessage);
-      return;
-    }
-
+  async function fetchProfile(uid) {
     try {
-      // Get the authentication token from localStorage
-      const token = localStorage.getItem("authToken");
-
-      if (!token) {
-        errorMessage = "You need to be logged in to view this profile.";
-        console.error(errorMessage);
-        return;
-      }
-
-      console.log(`Fetching profile for ID: ${params.id}`);
-
-      const response = await fetch(`/api/profile/${params.id}`, {
+      // Fetch profile data from the backend
+      const response = await fetch(`/api/profile/${uid}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`, // Send token for authorization
         },
       });
 
       const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || "Error fetching profile data");
+        throw new Error(data.error || "Failed to fetch profile.");
       }
 
-      profile = data.profile;
-      console.log("Fetched profile data:", profile);
-    } catch (err) {
-      errorMessage = err.message;
-      console.error("Error fetching profile:", err);
+      return data.profile;
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      throw error;
+    }
+  }
+
+  onMount(async () => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (!user) {
+        throw new Error("No user is logged in.");
+      }
+
+      // Pass the user's UID to fetchProfile
+      profile = await fetchProfile(user.uid);
+    } catch (error) {
+      errorMessage = error.message || "An error occurred.";
     }
   });
 </script>
