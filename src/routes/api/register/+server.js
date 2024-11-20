@@ -1,4 +1,4 @@
-import { register, saveUserProfile } from '../../../lib/auth.js'; 
+import { register, saveUserProfile,sendEmailVerification } from '../../../lib/auth.js'; 
 
 export async function POST({ request }) {
   const { name, username, email, password } = await request.json();

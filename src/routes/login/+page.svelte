@@ -12,34 +12,23 @@
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
-
-      if(response.ok) {
-        localStorage.setItem('authToken', data.token);  
-        //redirect to user profile
-        await goto(`/profile/${data.uid}`);
-       }
 
       if (!response.ok) {
         throw new Error(data.error || 'Invalid email or password');
       }
 
-      if (data.message === 'Email not verified') {
-        errorMessage = 'Your email is not verified. Please check your inbox.';
-        return; 
-      }
-
-     
+      localStorage.setItem('authToken', data.token); // Store the token
+      await goto(`/profile/${data.uid}`); // Redirect to the profile page
     } catch (err) {
-      errorMessage = err.message;
-      console.error('Login error:', err); 
+      errorMessage = err.message; // Display the error message
+      console.error('Login error:', err);
     }
   }
 </script>
-
 
 <div class="login-container">
   <h1>Log In</h1>
@@ -52,19 +41,16 @@
       <label for="password">Password</label>
       <input id="password" type="password" bind:value={password} required />
     </div>
-
     <button type="submit">Log In</button>
-
     {#if errorMessage}
       <p class="error">{errorMessage}</p>
     {/if}
   </form>
 </div>
 
-
 <style>
   .login-container {
-    display: flexbox;
+    display: flex;
     flex-direction: column;
     align-items: center;
     margin: auto;

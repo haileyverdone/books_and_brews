@@ -104,7 +104,8 @@
               href={tab.href}
               on:click={() => setActiveTab(tab.name)}
             >
-              <i class="{tab.icon}"></i> <span class="d-none d-lg-inline">{tab.name}</span>
+              <i class="{tab.icon}"></i> 
+              <span class="d-none d-lg-inline">{tab.name}</span>
             </a>
           </li>
         {/each}
