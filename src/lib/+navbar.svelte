@@ -20,8 +20,9 @@
     { name: 'Events', icon: 'bi bi-calendar3', href: '/events' },
   ];
 
-  // Set the active tab
-  $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || '';
+  $: console.log('Current URL:', $page.url.pathname);
+  $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || 'Home';
+
 
 
   // Fetch user profile
@@ -43,9 +44,11 @@
 
  
   onAuthStateChanged(auth, async (currentUser) => {
+  console.log("Auth state changed:", currentUser);
   if (currentUser) {
     try {
       const userProfile = await fetchUserProfile(currentUser.uid);
+      console.log("Fetched user profile:", userProfile);
       authState.set({
         isLoggedIn: true,
         userEmail: currentUser.email,
@@ -62,6 +65,7 @@
       });
     }
   } else {
+    console.log("No user logged in");
     authState.set({
       isLoggedIn: false,
       userEmail: '',
@@ -106,13 +110,17 @@
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div class="collapse navbar-collapse" id="navbarNav">
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
       <ul class="navbar-nav ms-auto">
         {#each tabs as tab}
           <li class="nav-item">
             <a
               class="nav-link {activeTab === tab.name ? 'active' : ''}"
               href={tab.href}
+              on:click={() => {
+                console.log('Tab clicked:', tab.name);
+                activeTab = tab.name;
+              }}
             >
               <i class="{tab.icon}"></i> 
               <span class="d-none d-lg-inline">{tab.name}</span>
@@ -170,29 +178,41 @@
     color: pink;
     font-family: Georgia, 'Times New Roman', Times, serif;
     font-size: 2.5rem;
+    margin: 0;
   }
 
   .nav-link:hover {
     color: pink;
   }
 
+
   .navbar-collapse {
-    justify-content: flex-end;
+    justify-content: center;
   }
 
   .navbar-toggler {
     margin-left: auto;
   }
+  @media (max-width: 992px) {
+  .navbar-collapse {
+    justify-content: right;
+  }
 
   .navbar-nav {
-    margin-left: auto;
+    flex-direction: row;
+    align-items: center;
     display: flex;
-    justify-content: flex-end;
+    gap: 1.5rem;
+   
   }
-
-  .dropdown-menu {
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,1);
-    z-index: 2000;
+  .nav-item {
+    text-align: center;
   }
+  .nav-link{
+    font-size: 1.5rem;
+    color: black;
+    transition: color 0.3s ease-in-out;
+  }
+}
+ 
 </style>

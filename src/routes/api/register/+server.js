@@ -34,7 +34,13 @@ export async function POST({ request }) {
       clientMessage = 'This email is already registered. Please log in.';
     } else if (error.code === 'auth/invalid-email') {
       clientMessage = 'Invalid email address. Please check and try again.';
+    } else if (
+      error.message &&
+      error.message.includes('Password must contain an upper case character')
+    ) {
+      clientMessage = 'Password must contain at least one uppercase character';
     }
+  
     return new Response(
       JSON.stringify({ error: clientMessage }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }

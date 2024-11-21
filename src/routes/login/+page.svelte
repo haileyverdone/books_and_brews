@@ -2,12 +2,12 @@
   import { goto } from '$app/navigation';
   import {getAuth, signInWithEmailAndPassword} from 'firebase/auth';
 
-  const auth = getAuth();
   let email = '';
   let password = ''; 
   let errorMessage = '';
 
   async function handleLogin() {
+    const auth = getAuth();
     errorMessage = '';
 
     try {
@@ -30,7 +30,7 @@
         throw new Error(data.error || 'Invalid email or password');
       }
 
-      sessionStorage.setItem('authToken', data.token); // Store the token
+      localStorage.setItem('authToken', data.token); // Store the token
       await goto(`/profile/${data.uid}`); // Redirect to the profile page
     } catch (err) {
       errorMessage = err.message || 'An error occured during login.'; // Display the error message
