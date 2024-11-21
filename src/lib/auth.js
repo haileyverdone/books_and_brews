@@ -7,7 +7,7 @@ export async function register(email, password, name, username) {
       email,
       password,
       emailVerified: false,
-      displayName: name,
+      name,
     });
 
     await adminFirestore.collection('users').doc(userRecord.uid).set({
@@ -15,25 +15,15 @@ export async function register(email, password, name, username) {
       name,
       username,
       email,
-      createdAt: new Date(),
+      createdAt: adminAuth.firestore.FieldValue.serverTimestamp(),
     });
 
     console.log('User registered successfully:', userRecord);
     return { success: true, user: userRecord, message: 'Registration successful! Please verify your email.' };
-    await sendEmailVerification(userCredential.user);
+
   } catch (error) {
     console.error('Error registering user:', error);
     return { success: false, message: error.message || 'Failed to register user' };
-  }
-}
-
-// Login user (handled by Firebase Auth on the client side, so no Admin SDK needed)
-export async function loginUser(email, password) {
-  try {
-    return signInWithEmailAndPassword(auth,email,password);
-  } catch (error) {
-    console.error('Login error:', error);
-    return { success: false, message: error.message };
   }
 }
 

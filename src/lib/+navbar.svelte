@@ -3,6 +3,7 @@
   import { doc, getDoc } from 'firebase/firestore';
   import app, { db } from '$lib/firebaseConfig';
   import { authState } from '$lib/stores';
+  import { page } from '$app/stores';
 
   let isLoggedIn = false, userEmail = '', uid = '', userProfile = null;
   let activeTab = '';
@@ -20,10 +21,8 @@
   ];
 
   // Set the active tab
-  function setActiveTab(tabName) {
-    activeTab = tabName;
-    console.log("Setting active tab to:", tabName);
-  }
+  $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || '';
+
 
   // Fetch user profile
   async function fetchUserProfile(uid) {
@@ -34,32 +33,45 @@
        return userDoc.data();
       } else {
         console.log("No profile found.");
+        return null;
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
-      return null;
+      throw error;
     }
   }
 
  
-    onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const userProfile = await fetchUserProfile(currentUser.uid); // Fetch user profile from Firestore
+  onAuthStateChanged(auth, async (currentUser) => {
+  if (currentUser) {
+    try {
+      const userProfile = await fetchUserProfile(currentUser.uid);
       authState.set({
         isLoggedIn: true,
         userEmail: currentUser.email,
         uid: currentUser.uid,
-        userProfile: userProfile || null,
+        userProfile: userProfile || null, // Set null if no profile is found
       });
-      } else {
-        authState.set({
-          isLoggedIn: false,
-          userEmail: '',
-          uid: '',
-          userProfile: null,
-        });
-      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      authState.set({
+        isLoggedIn: true,
+        userEmail: currentUser.email,
+        uid: currentUser.uid,
+        userProfile: null, // Fallback to null profile if there's an error
+      });
+    }
+  } else {
+    authState.set({
+      isLoggedIn: false,
+      userEmail: '',
+      uid: '',
+      userProfile: null,
     });
+  }
+});
+
+
 
 
   // Logout function
@@ -101,7 +113,6 @@
             <a
               class="nav-link {activeTab === tab.name ? 'active' : ''}"
               href={tab.href}
-              on:click={() => setActiveTab(tab.name)}
             >
               <i class="{tab.icon}"></i> 
               <span class="d-none d-lg-inline">{tab.name}</span>
@@ -115,17 +126,17 @@
           </button>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
             {#if isLoggedIn}
-              <li><span class="dropdown-item">Logged in as {userEmail}</span></li>
-              {#if userProfile && userProfile.name}
-                <li><a class="dropdown-item" href={`/profile/${uid}`}>View Profile</a></li>
-              {:else}
-                <li><span class="dropdown-item">Loading profile...</span></li>
-              {/if}
-              <li><button class="dropdown-item" on:click={handleLogout}>Log Out</button></li>
+            <li><span class="dropdown-item">Logged in as {userEmail}</span></li>
+            {#if userProfile}
+              <li><a class="dropdown-item" href={`/profile/${uid}`}>View Profile</a></li>
             {:else}
-              <li><a class="dropdown-item" href="/login">Log In</a></li>
-              <li><a class="dropdown-item" href="/register">Register</a></li>
+              <li><span class="dropdown-item">Loading profile...</span></li>
             {/if}
+            <li><button class="dropdown-item" on:click={handleLogout}>Log Out</button></li>
+          {:else}
+            <li><a class="dropdown-item" href="/login">Log In</a></li>
+            <li><a class="dropdown-item" href="/register">Register</a></li>
+          {/if}          
           </ul>
         </li>
       </ul>

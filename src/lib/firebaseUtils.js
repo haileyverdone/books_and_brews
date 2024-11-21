@@ -1,6 +1,6 @@
 import { auth, db } from './firebaseConfig';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendEmailVerification } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 // Register a new user and send a verification email
 export async function registerUser(email, password, name, username) {
@@ -17,7 +17,7 @@ export async function registerUser(email, password, name, username) {
       name,
       username,
       email,
-      createdAt: new Date()
+      createdAt: serverTimestamp(),
     });
 
     console.log('User registered and verification email sent.');
@@ -39,10 +39,19 @@ export async function loginUser(email, password) {
     }
 
     console.log('User logged in successfully');
-    return { success: true, user };
+    return { success: true, user: {
+      uid: user.uid,
+      email:user.email,
+      name: user.name,
+    },
+   };
   } catch (error) {
     console.error('Login error:', error);
-    return { success: false, message: error.message || 'Invalid email or password' };
+    const errorMessage = error.code === 'auth/user-not-found'
+      ? 'No user found with this email.'
+      : error.message || 'Invalid email or password';
+
+    return { success: false, message: errorMessage };
   }
 }
 
@@ -60,6 +69,11 @@ export async function logoutUser() {
 
 // Fetch user profile data
 export async function fetchUserProfile(uid) {
+  if (!uid) {
+    console.error('UID is required to fetch user profile.');
+    return { success: false, message: 'User ID is missing.' };
+  }
+
   try {
     const userDocRef = doc(db, "users", uid);
     const userDoc = await getDoc(userDocRef);
@@ -72,6 +86,6 @@ export async function fetchUserProfile(uid) {
     }
   } catch (error) {
     console.error('Error fetching profile:', error);
-    return { success: false, message: error.message || 'Failed to fetch user profile' };
+    return { success: false, message: error.message || 'Failed to fetch user profile.' };
   }
 }

@@ -1,17 +1,20 @@
-import { adminFirestore } from '$lib/firebaseAdmin'; 
+import { adminFirestore , adminAuth } from '$lib/firebaseAdmin'; 
 import admin from 'firebase-admin';
 
 export async function POST({ request }) {
     try{
       const body  = await request.json();
-      const { name, username, email, uid} = body;
+      const { name, username, email} = body;
 
-      if (!name || !username || !email || !uid) {
+      if (!name || !username || !email) {
         return new Response(
           JSON.stringify({ error: 'Missing required fields' }),
           { status: 400, headers: { 'Content-Type': 'application/json' } }
         );
       }
+
+      const userRecord = await adminAuth.getUserByEmail(email);
+      const uid = userRecord.uid;
 
         await adminFirestore.collection('users').doc(uid).set({
           name,

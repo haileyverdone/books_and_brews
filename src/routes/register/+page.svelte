@@ -28,7 +28,7 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name, username, email, uid: user.uid, }),
+        body: JSON.stringify({ name, username, email }),
       });
       
       if (!response.ok) {

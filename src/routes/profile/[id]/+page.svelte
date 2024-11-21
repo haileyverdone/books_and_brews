@@ -1,13 +1,12 @@
 <script>
   import { onMount } from "svelte";
-  import { getAuth } from "firebase/auth";
+  import { getAuth, onAuthStateChanged} from "firebase/auth";
 
   let profile = null;
   let errorMessage = "";
 
   async function fetchProfile(uid) {
     try {
-      // Fetch profile data from the backend
       const response = await fetch(`/api/profile/${uid}`, {
         method: "GET",
         headers: {
@@ -28,19 +27,19 @@
   }
 
   onMount(async () => {
-    try {
       const auth = getAuth();
-      const user = auth.currentUser;
 
-      if (!user) {
-        throw new Error("No user is logged in.");
+      onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          profile = await fetchProfile(user.uid);
+        } catch (error) {
+          errorMessage = error.message || "An error occurred.";
+        }
+      } else {
+        errorMessage = "No user is logged in.";
       }
-
-      // Pass the user's UID to fetchProfile
-      profile = await fetchProfile(user.uid);
-    } catch (error) {
-      errorMessage = error.message || "An error occurred.";
-    }
+    });
   });
 </script>
 
