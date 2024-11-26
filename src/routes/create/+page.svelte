@@ -10,10 +10,13 @@
   let description = "";
   let imageFile = null;
   let errorMessage = "";
+  let suggestions = []; // Hold book suggestions
+  let showSuggestions = false; // Control visibility
+  let selectedSuggestionIndex = -1; // Track selected suggestion for keyboard navigation
 
   const auth = getAuth();
 
-  // Check authentication status on mount
+  // Check authentication status
   onMount(() => {
     onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
@@ -29,6 +32,50 @@
   // Handle file input or camera photo
   function handleFileInput(event) {
     imageFile = event.target.files[0];
+  }
+
+  // Fetch book suggestions from Open Library API
+  let debounceTimeout;
+  async function fetchBookSuggestions(query) {
+    clearTimeout(debounceTimeout);
+
+    if (!query) {
+      suggestions = [];
+      showSuggestions = false;
+      return;
+    }
+
+    debounceTimeout = setTimeout(async () => {
+      try {
+        const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        suggestions = data.docs.slice(0, 5); // Limit to 5 results
+        showSuggestions = suggestions.length > 0;
+        selectedSuggestionIndex = -1; // Reset selection
+      } catch (error) {
+        console.error("Error fetching book suggestions:", error);
+      }
+    }, 300); // Add debounce delay
+  }
+
+  // Handle suggestion selection
+  function selectBookSuggestion(book) {
+    bookTitle = book.title; // Update the book title with the selected suggestion
+    showSuggestions = false; // Hide suggestions after selection
+  }
+
+  // Handle keyboard navigation
+  function handleKeydown(event) {
+    if (event.key === "ArrowDown") {
+      selectedSuggestionIndex = (selectedSuggestionIndex + 1) % suggestions.length;
+    } else if (event.key === "ArrowUp") {
+      selectedSuggestionIndex =
+        (selectedSuggestionIndex - 1 + suggestions.length) % suggestions.length;
+    } else if (event.key === "Enter" && selectedSuggestionIndex >= 0) {
+      selectBookSuggestion(suggestions[selectedSuggestionIndex]);
+      event.preventDefault(); // Prevent form submission
+    }
   }
 
   async function createPost(event) {
@@ -58,7 +105,8 @@
   }
 </script>
 
-<!-- Display a login prompt for guests -->
+
+
 {#if !isLoggedIn}
   <div class="guest-container">
     <h2>Welcome to Books & Brews</h2>
@@ -67,19 +115,46 @@
     <button on:click={() => goto('/register')}>Sign Up</button>
   </div>
 {:else}
-  <!-- Display the create form for logged-in users -->
   <div class="form-container">
-    <h2>Create Your Post</h2>
+    <h2>Create a Post!</h2>
     <form on:submit|preventDefault={createPost}>
-      <div>
+      <div class="input-container">
         <label for="bookTitle">Book Title:</label>
         <input
           type="text"
           id="bookTitle"
           bind:value={bookTitle}
           placeholder="Enter the book title"
+          on:input={() => fetchBookSuggestions(bookTitle)}
+          on:keydown={handleKeydown}
         />
-      </div>
+        {#if showSuggestions}
+  <ul class="suggestions">
+    {#each suggestions as book, index}
+      <li>
+        <button
+          type="button"
+          class="{selectedSuggestionIndex === index ? 'highlighted' : ''}"
+          on:click={() => selectBookSuggestion(book)}
+          on:keydown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              selectBookSuggestion(book);
+            }
+          }}
+        >
+          {#if book.title}
+            {book.title}{#if book.author_name && book.author_name.length > 0} by {book.author_name[0]}{/if}
+          {:else}
+            Unknown Title
+          {/if}
+        </button>
+      </li>
+    {/each}
+  </ul>
+{/if}
+
+</div>
+      
 
       <div>
         <label for="coffeeShop">Coffee Shop:</label>
@@ -119,6 +194,7 @@
     {/if}
   </div>
 {/if}
+
 
 <style>
   .guest-container {
@@ -210,4 +286,36 @@
     color: red;
     margin-top: 1rem;
   }
+  .suggestions {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: white;
+    position: absolute;
+    width: 100%;
+    z-index: 10;
+  }
+
+  .suggestions button {
+  all: unset; /* Reset button styles */
+  display: block;
+  width: 100%;
+  padding: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.suggestions button.highlighted {
+  background-color: #f0f0f0;
+}
+
+.suggestions button:hover {
+  background-color: #e0e0e0;
+}
+
+
 </style>
