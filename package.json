@@ -35,12 +35,13 @@
 		"@auth/core": "^0.37.2",
 		"@auth/sveltekit": "^1.7.2",
 		"@firebase/firestore": "^4.7.5",
+		"@google-cloud/firestore": "^7.10.0",
 		"bcrypt": "^5.1.1",
 		"bcryptjs": "^2.4.3",
 		"cookie": "^1.0.1",
 		"dotenv": "^16.4.5",
 		"firebase": "^11.0.2",
-		"firebase-admin": "^12.7.0",
+		"firebase-admin": "^13.0.1",
 		"pg": "^8.13.1",
 		"postgres": "^3.4.4"
 	}

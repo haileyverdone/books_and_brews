@@ -10,9 +10,9 @@
   let description = "";
   let imageFile = null;
   let errorMessage = "";
-  let suggestions = []; // Hold book suggestions
-  let showSuggestions = false; // Control visibility
-  let selectedSuggestionIndex = -1; // Track selected suggestion for keyboard navigation
+  let suggestions = []; 
+  let showSuggestions = false; 
+  let selectedSuggestionIndex = -1;
 
   const auth = getAuth();
 
@@ -50,13 +50,19 @@
         const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}`;
         const response = await fetch(url);
         const data = await response.json();
-        suggestions = data.docs.slice(0, 5); // Limit to 5 results
+        suggestions = data.docs.slice(0, 5).map((book) => ({
+          title: book.title,
+          author: book.author_name?.[0] || "Unknown Author",
+          cover: book.cover_i
+            ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`
+            : "https://via.placeholder.com/50x75?text=No+Cover",
+        }));
         showSuggestions = suggestions.length > 0;
         selectedSuggestionIndex = -1; // Reset selection
       } catch (error) {
         console.error("Error fetching book suggestions:", error);
       }
-    }, 300); // Add debounce delay
+    }, 300); 
   }
 
   // Handle suggestion selection
@@ -142,12 +148,17 @@
             }
           }}
         >
+        <img src={book.cover} alt="{book.title}" class="book-cover" />
+        <div class="book-info">
           {#if book.title}
-            {book.title}{#if book.author_name && book.author_name.length > 0} by {book.author_name[0]}{/if}
+            <span class="book-title">{book.title}</span>
+            {#if book.author_name && book.author_name.length > 0}
+              <span class="book-author"> by {book.author_name[0]}</span>
+            {/if}
           {:else}
-            Unknown Title
+            <span class="book-title">Unknown Title</span>
           {/if}
-        </button>
+        </div>
       </li>
     {/each}
   </ul>
@@ -155,7 +166,6 @@
 
 </div>
       
-
       <div>
         <label for="coffeeShop">Coffee Shop:</label>
         <input
@@ -287,22 +297,36 @@
     margin-top: 1rem;
   }
   .suggestions {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    max-height: 150px;
-    overflow-y: auto;
-    background-color: white;
-    position: absolute;
-    width: 100%;
-    z-index: 10;
-  }
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  position: absolute;
+  width: 100%;
+  z-index: 10;
+  overflow-y: auto; /* Adds a scrollbar if needed */
+  max-height: 300px; /* Set max height to avoid showing too many results */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow for better visibility */
+}
+.suggestions li {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
 
-  .suggestions button {
+.suggestions li:last-child {
+  border-bottom: none;
+}
+
+
+.suggestions button {
   all: unset; /* Reset button styles */
-  display: block;
+  display: flex;
+  align-items: center;
   width: 100%;
   padding: 10px;
   text-align: left;
@@ -316,6 +340,28 @@
 .suggestions button:hover {
   background-color: #e0e0e0;
 }
+.book-cover {
+  width: 50px;
+  height: 75px;
+  margin-right: 10px; /* Space between the cover image and text */
+  border-radius: 4px;
+  object-fit: cover; /* Ensure the image maintains aspect ratio */
+}
+.book-info {
+  display: inline-block;
+  vertical-align: top;
+  max-width: calc(100% - 60px);
+}
 
+.book-title {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-bottom: 2px;
+}
+
+.book-author {
+  font-size: 0.9rem;
+  color: #555;
+}
 
 </style>
