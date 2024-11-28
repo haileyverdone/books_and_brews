@@ -1,46 +1,14 @@
 <script>
-  import { onMount } from "svelte";
-  import { getAuth, onAuthStateChanged} from "firebase/auth";
+  import { authState } from '$lib/stores';
 
-  let profile = null;
-  let errorMessage = "";
+let profile = null;
+let errorMessage = "";
 
-  async function fetchProfile(uid) {
-    try {
-      const response = await fetch(`/api/profile/${uid}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch profile.");
-      }
-
-      return data.profile;
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      throw error;
-    }
-  }
-
-  onMount(async () => {
-      const auth = getAuth();
-
-      onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          profile = await fetchProfile(user.uid);
-        } catch (error) {
-          errorMessage = error.message || "An error occurred.";
-        }
-      } else {
-        errorMessage = "No user is logged in.";
-      }
-    });
-  });
+$: if ($authState.userProfile) {
+  profile = $authState.userProfile;
+} else {
+  errorMessage = "No user is logged in.";
+}
 </script>
 
 {#if profile}

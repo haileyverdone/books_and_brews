@@ -1,26 +1,14 @@
 <script>
+  import { authState } from '$lib/stores';
   import { collection, getDocs } from "firebase/firestore";
-  import { getAuth, onAuthStateChanged } from "firebase/auth";
   import { db } from "$lib/firebaseConfig";
-  import { goto } from "$app/navigation";
 
   let posts = [];
   let isLoading = true;
   let errorMessage = "";
   let isLoggedIn = false;
+  $: ({ isLoggedIn } = $authState);
 
-  const auth = getAuth();
-
-  // Check authentication status
-  onAuthStateChanged(auth, (user) => {
-    isLoggedIn = !!user;
-    if (!isLoggedIn) {
-      errorMessage = "You must be logged in to view this page.";
-      setTimeout(() => goto("/login"), 2000); // Redirect guests to login after 2 seconds
-    } else {
-      fetchPosts(); // Fetch posts if logged in
-    }
-  });
 
   // Fetch posts from Firestore
   async function fetchPosts() {
@@ -38,6 +26,7 @@
       isLoading = false;
     }
   }
+  fetchPosts();
 </script>
 
 {#if isLoading}

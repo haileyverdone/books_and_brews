@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import { getAuth, onAuthStateChanged } from "firebase/auth";
+  import { authState } from '$lib/stores';
   import { goto } from "$app/navigation";
 
   let isLoggedIn = false;
@@ -14,20 +14,9 @@
   let showSuggestions = false; 
   let selectedSuggestionIndex = -1;
 
-  const auth = getAuth();
 
-  // Check authentication status
-  onMount(() => {
-    onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        isLoggedIn = true;
-        user = currentUser;
-      } else {
-        isLoggedIn = false;
-        user = null;
-      }
-    });
-  });
+  $: ({ isLoggedIn, user } = $authState);
+
 
   // Handle file input or camera photo
   function handleFileInput(event) {
