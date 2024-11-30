@@ -1,5 +1,5 @@
 import { auth, db } from './firebaseConfig';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendEmailVerification } from 'firebase/auth';
+import { setPersistence, browserSessionPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 // Register a new user and send a verification email
@@ -31,20 +31,17 @@ export async function registerUser(email, password, name, username) {
 // Login user and check email verification status
 export async function loginUser(email, password) {
   try {
+    await setPersistence(auth, browserSessionPersistence);
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
     if (!user.emailVerified) {
+      console.log("User email not verified:", user.email);
       throw new Error('Email not verified. Please check your email for the verification link.');
     }
 
-    console.log('User logged in successfully');
-    return { success: true, user: {
-      uid: user.uid,
-      email:user.email,
-      name: user.name,
-    },
-   };
+    console.log('User logged in successfully:', user);
+    return { success: true, user };
   } catch (error) {
     console.error('Login error:', error);
     const errorMessage = error.code === 'auth/user-not-found'
@@ -78,9 +75,11 @@ export async function fetchUserProfile(uid) {
     const userDoc = await getDoc(userDocRef);
 
     if (userDoc.exists()) {
+      console.log('User profile fetched:', userDoc.data());
       return userDoc.data(); // Return profile directly
     } else {
-      throw new Error('User profile not found.');
+      console.warn('User profile not found:', uid); 
+      return null;
     }
   } catch (error) {
     console.error('Error fetching profile:', error);

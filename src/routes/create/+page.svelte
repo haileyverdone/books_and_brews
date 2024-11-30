@@ -16,7 +16,11 @@
   let selectedSuggestionIndex = -1;
 
 
-  $: ({ isLoggedIn, user } = $authState);
+  $: {
+  ({ isLoggedIn, user } = $authState);
+  console.log("Updated reactive auth state:", { isLoggedIn, user });
+}
+
 
 
   // Handle file input or camera photo

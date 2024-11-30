@@ -1,9 +1,10 @@
 import { writable } from "svelte/store";
-import {  onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "$lib/firebaseConfig"; 
 import { fetchUserProfile } from "$lib/firebaseUtils";
 
 export const authState = writable({
+  isLoading: true,
   isLoggedIn: false,
   userEmail: "",
   uid: "",
@@ -12,31 +13,28 @@ export const authState = writable({
 
 
 onAuthStateChanged(auth, async (user) => {
-  console.log("Auth state changed:", user); // Should log the user object or `null`
+  console.log("Auth state changed:", user); 
+
   if (user) {
-    if (user) {
-      console.log("User is logged in:", {
-        email: user.email,
-        uid: user.uid,
-      });
-    }
     try {
+      console.log("User is logged in:", { email: user.email, uid: user.uid });
+
       const profile = await fetchUserProfile(user.uid);
       console.log("Fetched profile:", profile);
+
       authState.set({
+        isLoading: false,
         isLoggedIn: true,
         userEmail: user.email,
         uid: user.uid,
         userProfile: profile || null,
       });
-      console.log("Auth state updated: User logged in", {
-        isLoggedIn: true,
-        userEmail: user.email,
-        uid: user.uid,
-      });
+      console.log("Auth state updated: User logged in");
     } catch (error) {
       console.error("Error fetching profile:", error);
+
       authState.set({
+        isLoading: false,
         isLoggedIn: true,
         userEmail: user.email,
         uid: user.uid,
@@ -45,7 +43,9 @@ onAuthStateChanged(auth, async (user) => {
     }
   } else {
     console.log("No user logged in");
+
     authState.set({
+      isLoading:false,
       isLoggedIn: false,
       userEmail: '',
       uid: '',
