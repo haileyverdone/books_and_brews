@@ -1,5 +1,6 @@
 <script>
-  import { getAuth, signOut } from 'firebase/auth';
+  import {signOut } from 'firebase/auth';
+  import { auth } from "$lib/firebaseConfig"; 
   import { authState } from '$lib/stores';
   import { page } from '$app/stores';
 
@@ -24,7 +25,6 @@
 
   // Logout function
   async function handleLogout() {
-    const auth = getAuth();
     await signOut(auth);
     authState.set({
     isLoggedIn: false,
@@ -78,7 +78,7 @@
             <i class="bi bi-person-fill"></i> Profile
           </button>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-            {#if isLoggedIn}
+            {#if $authState.isLoggedIn}
             <li><span class="dropdown-item">Logged in as {userEmail}</span></li>
             {#if userProfile}
               <li><a class="dropdown-item" href={`/profile/${uid}`}>View Profile</a></li>

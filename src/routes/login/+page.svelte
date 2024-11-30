@@ -1,13 +1,14 @@
 <script>
   import { goto } from '$app/navigation';
-  import {getAuth, signInWithEmailAndPassword} from 'firebase/auth';
+  import { signInWithEmailAndPassword} from 'firebase/auth';
+  import { auth } from '$lib/firebaseConfig';
+
 
   let email = '';
   let password = ''; 
   let errorMessage = '';
 
   async function handleLogin() {
-    const auth = getAuth();
     errorMessage = '';
 
     try {

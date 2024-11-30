@@ -77,7 +77,10 @@
   async function createPost(event) {
     event.preventDefault();
 
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || !user) {
+      errorMessage = "You must be logged in to create a post.";
+      return;
+    }
 
     try {
       const postId = `${user.uid}-${Date.now()}`; // Unique post ID
@@ -93,6 +96,7 @@
       // TODO: Add image upload logic here (if needed)
 
       // Redirect to Explore Page after successful post creation
+      await addDoc(collection(db, "posts"), postData);
       goto("/explore");
     } catch (error) {
       console.error("Error creating post:", error);

@@ -1,6 +1,8 @@
 <script>
   import { goto } from '$app/navigation';
-  import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+  import {  createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+  import { auth } from '$lib/firebaseConfig';
+
 
   let name = '';
   let username = '';
@@ -10,7 +12,6 @@
   let message = '';
 
   async function handleRegister() {
-    const auth = getAuth();
     errorMessage = '';
     message = '';
 

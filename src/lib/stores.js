@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import {  onAuthStateChanged } from "firebase/auth";
+import { auth } from "$lib/firebaseConfig"; 
 import { fetchUserProfile } from "$lib/firebaseUtils";
 
 export const authState = writable({
@@ -9,11 +10,16 @@ export const authState = writable({
   userProfile: null,
 });
 
-const auth = getAuth();
 
 onAuthStateChanged(auth, async (user) => {
   console.log("Auth state changed:", user); // Should log the user object or `null`
   if (user) {
+    if (user) {
+      console.log("User is logged in:", {
+        email: user.email,
+        uid: user.uid,
+      });
+    }
     try {
       const profile = await fetchUserProfile(user.uid);
       console.log("Fetched profile:", profile);
@@ -22,6 +28,11 @@ onAuthStateChanged(auth, async (user) => {
         userEmail: user.email,
         uid: user.uid,
         userProfile: profile || null,
+      });
+      console.log("Auth state updated: User logged in", {
+        isLoggedIn: true,
+        userEmail: user.email,
+        uid: user.uid,
       });
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -40,6 +51,7 @@ onAuthStateChanged(auth, async (user) => {
       uid: '',
       userProfile: null,
     });
+    console.log("Auth state updated: User logged out");
   }
 });
 
