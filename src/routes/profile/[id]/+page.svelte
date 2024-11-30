@@ -4,11 +4,15 @@
 let profile = null;
 let errorMessage = "";
 
-$: if ($authState.userProfile) {
-  profile = $authState.userProfile;
-} else {
-  errorMessage = "No user is logged in.";
-}
+$: {
+    if ($authState.isLoggedIn && $authState.userProfile) {
+      profile = $authState.userProfile;
+      errorMessage = ""; // Clear error if user is logged in
+    } else {
+      profile = null; // Ensure profile is reset if no user is logged in
+      errorMessage = "No user is logged in.";
+    }
+  }
 </script>
 
 {#if profile}

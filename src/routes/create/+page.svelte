@@ -1,7 +1,8 @@
 <script>
-  import { onMount } from "svelte";
   import { authState } from '$lib/stores';
-  import { goto } from "$app/navigation";
+  import { addDoc, collection } from 'firebase/firestore';
+  import { db } from '$lib/firebaseConfig';
+  import { goto } from '$app/navigation';
 
   let isLoggedIn = false;
   let user = null;

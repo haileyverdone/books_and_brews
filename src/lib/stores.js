@@ -7,7 +7,6 @@ export const authState = writable({
   userEmail: "",
   uid: "",
   userProfile: null,
-  isLoading: true,
 });
 
 const auth = getAuth();
@@ -22,7 +21,7 @@ onAuthStateChanged(auth, async (user) => {
         isLoggedIn: true,
         userEmail: user.email,
         uid: user.uid,
-        userProfile: profile,
+        userProfile: profile || null,
       });
     } catch (error) {
       console.error("Error fetching profile:", error);
