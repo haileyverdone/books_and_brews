@@ -1,14 +1,12 @@
 <script>
-  import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-  import { doc, getDoc } from 'firebase/firestore';
-  import app, { db } from '$lib/firebaseConfig';
+  import { getAuth, signOut } from 'firebase/auth';
   import { authState } from '$lib/stores';
   import { page } from '$app/stores';
 
   let isLoggedIn = false, userEmail = '', uid = '', userProfile = null;
   let activeTab = '';
 
-  const auth = getAuth(app);
+  
 
   $: ({ isLoggedIn, userEmail, uid, userProfile } = $authState);
 
@@ -20,66 +18,13 @@
     { name: 'Events', icon: 'bi bi-calendar3', href: '/events' },
   ];
 
-  $: console.log('Current URL:', $page.url.pathname);
   $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || 'Home';
-
-
-
-  // Fetch user profile
-  async function fetchUserProfile(uid) {
-    try {
-      const userDocRef = doc(db, "users", uid);
-      const userDoc = await getDoc(userDocRef);
-      if (userDoc.exists()) {
-       return userDoc.data();
-      } else {
-        console.log("No profile found.");
-        return null;
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      throw error;
-    }
-  }
-
- 
-  onAuthStateChanged(auth, async (currentUser) => {
-  console.log("Auth state changed:", currentUser);
-  if (currentUser) {
-    try {
-      const userProfile = await fetchUserProfile(currentUser.uid);
-      console.log("Fetched user profile:", userProfile);
-      authState.set({
-        isLoggedIn: true,
-        userEmail: currentUser.email,
-        uid: currentUser.uid,
-        userProfile: userProfile || null, // Set null if no profile is found
-      });
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-      authState.set({
-        isLoggedIn: true,
-        userEmail: currentUser.email,
-        uid: currentUser.uid,
-        userProfile: null, // Fallback to null profile if there's an error
-      });
-    }
-  } else {
-    console.log("No user logged in");
-    authState.set({
-      isLoggedIn: false,
-      userEmail: '',
-      uid: '',
-      userProfile: null,
-    });
-  }
-});
-
 
 
 
   // Logout function
   async function handleLogout() {
+    const auth = getAuth();
     await signOut(auth);
     authState.set({
     isLoggedIn: false,

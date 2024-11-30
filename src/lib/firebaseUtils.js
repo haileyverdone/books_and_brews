@@ -70,8 +70,7 @@ export async function logoutUser() {
 // Fetch user profile data
 export async function fetchUserProfile(uid) {
   if (!uid) {
-    console.error('UID is required to fetch user profile.');
-    return { success: false, message: 'User ID is missing.' };
+    throw new Error('UID is required to fetch user profile.');
   }
 
   try {
@@ -79,13 +78,13 @@ export async function fetchUserProfile(uid) {
     const userDoc = await getDoc(userDocRef);
 
     if (userDoc.exists()) {
-      console.log('Fetched user profile data:', userDoc.data());
-      return { success: true, data: userDoc.data() };
+      return userDoc.data(); // Return profile directly
     } else {
       throw new Error('User profile not found.');
     }
   } catch (error) {
     console.error('Error fetching profile:', error);
-    return { success: false, message: error.message || 'Failed to fetch user profile.' };
+    throw error;
   }
 }
+
