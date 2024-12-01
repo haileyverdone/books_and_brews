@@ -8,28 +8,31 @@
   let isLoggedIn = false;
   let userProfile = null;
 
+  // Reactive subscription to authState
+  $: ({ isLoading, isLoggedIn, userProfile } = $authState);
+
+  // Redirect to login if not logged in
+  onMount(() => {
+    if (!isLoading && !isLoggedIn) {
+      window.location.href = '/login'; // Ensure client-only navigation
+    }
+  });
+
+  // Update profile or errorMessage
   $: {
-    ({ isLoading, isLoggedIn, userProfile } = $authState);
     if (isLoggedIn && userProfile) {
       profile = userProfile;
       errorMessage = '';
-    } else {
+    } else if (!isLoggedIn && !isLoading) {
       profile = null;
       errorMessage = 'No user is logged in.';
     }
   }
-
-  onMount(() => {
-    // Ensure this check runs only on the client
-    if (!isLoggedIn) {
-      window.location.href = '/login'; // Redirect to login if not logged in
-    }
-  });
 </script>
 
 {#if isLoading}
   <p>Loading profile...</p>
-{:else if isLoggedIn && userProfile}
+{:else if isLoggedIn && profile}
   <div class="profile-page">
     <h1>Welcome, {profile.name}!</h1>
     <p>Username: {profile.username}</p>

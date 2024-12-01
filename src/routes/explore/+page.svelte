@@ -7,9 +7,10 @@
   let posts = [];
   let isLoading = true;
   let errorMessage = '';
+  let isLoggedIn = false;
 
   // Update isLoggedIn from authState
-  $: isLoggedIn = $authState.isLoggedIn;
+  $: ({ isLoading, isLoggedIn } = $authState);
 
   // Fetch posts
   async function fetchPosts() {
@@ -27,13 +28,9 @@
     }
   }
 
-  onMount(() => {
-    if (isLoggedIn) {
-      fetchPosts();
-    } else {
-      errorMessage = 'You must be logged in to view posts.';
-    }
-  });
+  $: if (isLoggedIn && !isLoading) {
+    fetchPosts();
+  }
 </script>
 {#if isLoading}
   <p>Loading posts...</p>

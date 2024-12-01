@@ -15,7 +15,7 @@
   let showSuggestions = false; 
   let selectedSuggestionIndex = -1;
 
-  $: ({ isLoading, isLoggedIn, user } = $authState);
+  $: ({ isLoading, isLoggedIn, userEmail, uid, userProfile } = $authState);
 
   // Handle file input or camera photo
   function handleFileInput(event) {
@@ -76,7 +76,7 @@
     event.preventDefault();
 
 
-    if (!isLoggedIn || !user?.uid) {
+    if (!isLoggedIn || !uid) {
       errorMessage = "You must be logged in to create a post.";
       return;
     }
@@ -103,7 +103,7 @@
   }
 </script>
 
-{#if $authState.isLoading}
+{#if isLoading}
   <div class="loading">
     <p>Loading...</p>
   </div>
