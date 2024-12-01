@@ -1,41 +1,36 @@
 <script>
   import { goto } from '$app/navigation';
-  import { signInWithEmailAndPassword} from 'firebase/auth';
+  import { signInWithCustomToken, signInWithEmailAndPassword} from 'firebase/auth';
   import { auth } from '$lib/firebaseConfig';
-
+  
 
   let email = '';
   let password = ''; 
   let errorMessage = '';
+  let isLoading = false;
+  
 
   async function handleLogin() {
     errorMessage = '';
+    let isLoading = true;
+    
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      console.log("Firebase Auth Login Successful:", user);
 
       if (!user.emailVerified) {
         errorMessage = 'Email not verified. Please check your inbox.';
         return;
       }
+      await goto(`/profile/${user.uid}`);
 
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email}),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Invalid email or password');
-      }
-
-      localStorage.setItem('authToken', data.token); // Store the token
-      await goto(`/profile/${data.uid}`); // Redirect to the profile page
     } catch (err) {
       errorMessage = err.message || 'An error occured during login.'; // Display the error message
       console.error('Login error:', err);
+    }finally{
+      isLoading = false;
     }
   }
 </script>
@@ -51,7 +46,9 @@
       <label for="password">Password</label>
       <input id="password" type="password" bind:value={password} required />
     </div>
-    <button type="submit">Log In</button>
+    <button type="submit" disabled={isLoading}>
+      {isLoading ? 'Logging In...' : 'Log In'}
+    </button>
     {#if errorMessage}
       <p class="error">{errorMessage}</p>
     {/if}

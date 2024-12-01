@@ -1,15 +1,10 @@
 <script>
-  import {signOut } from 'firebase/auth';
-  import { auth } from "$lib/firebaseConfig"; 
+  import { signOut } from 'firebase/auth';
+  import { auth } from "$lib/firebaseConfig";
   import { authState } from '$lib/stores';
   import { page } from '$app/stores';
 
-  let isLoggedIn = false, userEmail = '', uid = '', userProfile = null;
   let activeTab = '';
-
-  
-
-  $: ({ isLoggedIn, userEmail, uid, userProfile } = $authState);
 
   // Navigation tabs
   let tabs = [
@@ -19,24 +14,26 @@
     { name: 'Events', icon: 'bi bi-calendar3', href: '/events' },
   ];
 
-  $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || 'Home';
-
-
+  // Update active tab based on current URL
+  $: try {
+    activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || 'Home';
+  } catch (error) {
+    console.error('Error determining active tab:', error);
+    activeTab = 'Home';
+  }
 
   // Logout function
   async function handleLogout() {
-    await signOut(auth);
-    authState.set({
-    isLoggedIn: false,
-    userEmail: '',
-    uid : '',
-    userProfile: null,
-    })
-    window.location.href = '/';
+    try {
+      await signOut(auth);
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   }
 
   // Log the current state for debugging
-  $: console.log('Current auth state:', { isLoggedIn, userEmail, uid, userProfile });
+  $: console.log('Current auth state:', $authState);
   $: console.log('Current active tab:', activeTab);
 </script>
 
@@ -79,9 +76,9 @@
           </button>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
             {#if $authState.isLoggedIn}
-            <li><span class="dropdown-item">Logged in as {userEmail}</span></li>
-            {#if userProfile}
-              <li><a class="dropdown-item" href={`/profile/${uid}`}>View Profile</a></li>
+            <li><span class="dropdown-item">Logged in as {$authState.userEmail}</span></li>
+            {#if $authState.userProfile}
+              <li><a class="dropdown-item" href={`/profile/${$authState.uid}`}>View Profile</a></li>
             {:else}
               <li><span class="dropdown-item">Loading profile...</span></li>
             {/if}
@@ -89,7 +86,8 @@
           {:else}
             <li><a class="dropdown-item" href="/login">Log In</a></li>
             <li><a class="dropdown-item" href="/register">Register</a></li>
-          {/if}          
+          {/if}
+                  
           </ul>
         </li>
       </ul>

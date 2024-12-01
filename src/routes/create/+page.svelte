@@ -15,13 +15,7 @@
   let showSuggestions = false; 
   let selectedSuggestionIndex = -1;
 
-
-  $: {
-  ({ isLoggedIn, user } = $authState);
-  console.log("Updated reactive auth state:", { isLoggedIn, user });
-}
-
-
+  $: ({ isLoggedIn, user } = $authState);
 
   // Handle file input or camera photo
   function handleFileInput(event) {
@@ -81,13 +75,13 @@
   async function createPost(event) {
     event.preventDefault();
 
-    if (!isLoggedIn || !user) {
+
+    if (!isLoggedIn || !user?.uid) {
       errorMessage = "You must be logged in to create a post.";
       return;
     }
 
     try {
-      const postId = `${user.uid}-${Date.now()}`; // Unique post ID
       const postData = {
         userId: user.uid,
         bookTitle,
@@ -109,9 +103,11 @@
   }
 </script>
 
-
-
-{#if !isLoggedIn}
+{#if $authState.isLoading}
+  <div class="loading">
+    <p>Loading...</p>
+  </div>
+{:else if !isLoggedIn}
   <div class="guest-container">
     <h2>Welcome to Books & Brews</h2>
     <p>You need to log in or create an account to create a post.</p>

@@ -2,11 +2,9 @@
   import { authState } from '$lib/stores'; // Import the authentication state
   import { goto } from '$app/navigation';
 
-  let isLoggedIn = false;
 
-  // Automatically track `authState` updates
-  $: {
-    isLoggedIn = $authState.isLoggedIn;
+  $: if (!$authState.isLoggedIn) {
+    goto('/login'); // Redirect if not logged in
   }
 
   function handleLoginRedirect() {
@@ -18,7 +16,7 @@
   }
 </script>
 
-{#if isLoggedIn}
+{#if $authState.isLoggedIn}
   <div>
     <h1>Events Page</h1>
     <p>Welcome! Explore the events happening around you.</p>

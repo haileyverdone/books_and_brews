@@ -6,19 +6,18 @@ import { fetchUserProfile } from "$lib/firebaseUtils";
 export const authState = writable({
   isLoading: true,
   isLoggedIn: false,
-  userEmail: "",
-  uid: "",
+  userEmail: '',
+  uid: '',
   userProfile: null,
 });
 
 
 onAuthStateChanged(auth, async (user) => {
-  console.log("Auth state changed:", user); 
+  console.log("Auth state changed:", user);
 
   if (user) {
     try {
-      console.log("User is logged in:", { email: user.email, uid: user.uid });
-
+      console.log("Fetching profile for UID:", user.uid);
       const profile = await fetchUserProfile(user.uid);
       console.log("Fetched profile:", profile);
 
@@ -29,10 +28,8 @@ onAuthStateChanged(auth, async (user) => {
         uid: user.uid,
         userProfile: profile || null,
       });
-      console.log("Auth state updated: User logged in");
     } catch (error) {
       console.error("Error fetching profile:", error);
-
       authState.set({
         isLoading: false,
         isLoggedIn: true,
@@ -42,17 +39,16 @@ onAuthStateChanged(auth, async (user) => {
       });
     }
   } else {
-    console.log("No user logged in");
-
+    console.log("No user is logged in.");
     authState.set({
-      isLoading:false,
+      isLoading: false,
       isLoggedIn: false,
-      userEmail: '',
-      uid: '',
+      userEmail: "",
+      uid: "",
       userProfile: null,
     });
-    console.log("Auth state updated: User logged out");
   }
 });
+
 
 
