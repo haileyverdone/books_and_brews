@@ -3,6 +3,8 @@
   import { auth } from "$lib/firebaseConfig";
   import { authState } from '$lib/stores';
   import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
+
 
   // Navigation tabs
   let tabs = [
@@ -12,23 +14,31 @@
     { name: 'Events', icon: 'bi bi-calendar3', href: '/events' },
   ];
 
-  let activeTab = '';
+  let activeTab ='';
   $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || 'Home';
+  $: console.log('Updated active tab:', activeTab);
+
+  let isLoggedIn = false;
+  let isLoading = true;
+  let userEmail = '';
+  let uid = '';
+  let userProfile = null;
 
   // Reactive authState variables
   $: ({ isLoggedIn, isLoading, userEmail, uid, userProfile } = $authState);
 
   // Logout function
-  async function handleLogout() {
-    try {
-      await signOut(auth);
-      console.log('User logged out successfully');
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Error during logout:', error);
-      alert('Failed to log out. Please try again.');
+    async function handleLogout() {
+      try {
+        await signOut(auth);
+        console.log('User logged out successfully');
+        goto('/'); // Redirect to home page
+      } catch (error) {
+        console.error('Error during logout:', error);
+        alert('Failed to log out. Please try again.');
+      }
     }
-  }
+
 
   // Log the current state for debugging
   $: console.log('Current auth state:', $authState);
@@ -73,14 +83,14 @@
             <i class="bi bi-person-fill"></i> Profile
           </button>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-            {#if $authState.isLoading}
+            {#if isLoading}
             <li class="nav-item">
               <span class="dropdown-item">Loading...</span>
             </li>
             {:else if isLoggedIn}
-            <li><span class="dropdown-item">Logged in as {$authState.userEmail}</span></li>
+            <li><span class="dropdown-item">Logged in as {userEmail}</span></li>
             {#if userProfile}
-              <li><a class="dropdown-item" href={`/profile/${$authState.uid}`}>View Profile</a></li>
+              <li><a class="dropdown-item" href={`/profile/${uid}`}>View Profile</a></li>
             {:else}
               <li><span class="dropdown-item">Loading profile...</span></li>
             {/if}

@@ -4,9 +4,7 @@
 
   $: ({ isLoading, isLoggedIn } = $authState);
 
-  $: if (!$authState.isLoggedIn) {
-    goto('/login'); // Redirect if not logged in
-  }
+
 
   function handleLoginRedirect() {
     goto('/login');

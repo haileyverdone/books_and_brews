@@ -1,20 +1,32 @@
 <script>
   import { authState } from '$lib/stores';
+  import { onMount } from 'svelte';
 
-let profile = null;
-let errorMessage = "";
+  let profile = null;
+  let errorMessage = '';
+  let isLoading = true; // Initialize loading state
+  let isLoggedIn = false;
+  let userProfile = null;
 
-$: ({ isLoading, isLoggedIn, userProfile } = $authState);
-$: {
-    if ($authState.isLoggedIn && $authState.userProfile) {
-      profile = $authState.userProfile;
-      errorMessage = ""; // Clear error if user is logged in
+  $: {
+    ({ isLoading, isLoggedIn, userProfile } = $authState);
+    if (isLoggedIn && userProfile) {
+      profile = userProfile;
+      errorMessage = '';
     } else {
-      profile = null; // Ensure profile is reset if no user is logged in
-      errorMessage = "No user is logged in.";
+      profile = null;
+      errorMessage = 'No user is logged in.';
     }
   }
+
+  onMount(() => {
+    // Ensure this check runs only on the client
+    if (!isLoggedIn) {
+      window.location.href = '/login'; // Redirect to login if not logged in
+    }
+  });
 </script>
+
 {#if isLoading}
   <p>Loading profile...</p>
 {:else if isLoggedIn && userProfile}

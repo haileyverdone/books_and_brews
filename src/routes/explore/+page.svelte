@@ -1,37 +1,41 @@
 <script>
   import { authState } from '$lib/stores';
-  import { collection, getDocs } from "firebase/firestore";
-  import { db } from "$lib/firebaseConfig";
+  import { collection, getDocs } from 'firebase/firestore';
+  import { db } from '$lib/firebaseConfig';
+  import { onMount } from 'svelte';
 
   let posts = [];
   let isLoading = true;
-  let errorMessage = "";
-   
-  $: ({ isLoading: isAuthLoading, isLoggedIn } = $authState);
+  let errorMessage = '';
 
-  $: if (!isAuthLoading && isLoggedIn) {
-    fetchPosts();
-  }
+  // Update isLoggedIn from authState
+  $: isLoggedIn = $authState.isLoggedIn;
 
-  // Fetch posts from Firestore
+  // Fetch posts
   async function fetchPosts() {
-    isLoadingPosts = true;
+    isLoading = true;
     try {
-      const querySnapshot = await getDocs(collection(db, "posts"));
+      const querySnapshot = await getDocs(collection(db, 'posts'));
       posts = querySnapshot.docs.map((doc) => doc.data());
-      isLoadingPosts = false; // Set loading to false after fetching
     } catch (error) {
-      console.error("Error fetching posts:", error);
-      errorMessage =
-        error.code === "permission-denied"
-          ? "You do not have permission to view posts. Please log in."
-          : "An error occurred while fetching posts.";
-      isLoadingPosts = false;
+      console.error('Error fetching posts:', error);
+      errorMessage = error.code === 'permission-denied' 
+        ? 'You do not have permission to view posts. Please log in.' 
+        : 'An error occurred while fetching posts.';
+    } finally {
+      isLoading = false;
     }
   }
-</script>
 
-{#if isAuthLoading}
+  onMount(() => {
+    if (isLoggedIn) {
+      fetchPosts();
+    } else {
+      errorMessage = 'You must be logged in to view posts.';
+    }
+  });
+</script>
+{#if isLoading}
   <p>Loading posts...</p>
 {:else if errorMessage}
   <p class="error">{errorMessage}</p>
