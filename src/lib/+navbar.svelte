@@ -4,8 +4,6 @@
   import { authState } from '$lib/stores';
   import { page } from '$app/stores';
 
-  let activeTab = '';
-
   // Navigation tabs
   let tabs = [
     { name: 'Home', icon: 'bi bi-house-fill', href: '/' },
@@ -14,21 +12,21 @@
     { name: 'Events', icon: 'bi bi-calendar3', href: '/events' },
   ];
 
-  // Update active tab based on current URL
-  $: try {
-    activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || 'Home';
-  } catch (error) {
-    console.error('Error determining active tab:', error);
-    activeTab = 'Home';
-  }
+  let activeTab = '';
+  $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || 'Home';
+
+  // Reactive authState variables
+  $: ({ isLoggedIn, isLoading, userEmail, uid, userProfile } = $authState);
 
   // Logout function
   async function handleLogout() {
     try {
       await signOut(auth);
+      console.log('User logged out successfully');
       window.location.href = '/';
     } catch (error) {
       console.error('Error during logout:', error);
+      alert('Failed to log out. Please try again.');
     }
   }
 
@@ -75,9 +73,13 @@
             <i class="bi bi-person-fill"></i> Profile
           </button>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-            {#if $authState.isLoggedIn}
+            {#if $authState.isLoading}
+            <li class="nav-item">
+              <span class="dropdown-item">Loading...</span>
+            </li>
+            {:else if isLoggedIn}
             <li><span class="dropdown-item">Logged in as {$authState.userEmail}</span></li>
-            {#if $authState.userProfile}
+            {#if userProfile}
               <li><a class="dropdown-item" href={`/profile/${$authState.uid}`}>View Profile</a></li>
             {:else}
               <li><span class="dropdown-item">Loading profile...</span></li>

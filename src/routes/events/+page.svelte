@@ -2,6 +2,7 @@
   import { authState } from '$lib/stores'; // Import the authentication state
   import { goto } from '$app/navigation';
 
+  $: ({ isLoading, isLoggedIn } = $authState);
 
   $: if (!$authState.isLoggedIn) {
     goto('/login'); // Redirect if not logged in
@@ -15,8 +16,9 @@
     goto('/register');
   }
 </script>
-
-{#if $authState.isLoggedIn}
+{#if isLoading}
+  <p>Loading...</p>
+{:else if isLoggedIn}
   <div>
     <h1>Events Page</h1>
     <p>Welcome! Explore the events happening around you.</p>

@@ -15,7 +15,7 @@
   let showSuggestions = false; 
   let selectedSuggestionIndex = -1;
 
-  $: ({ isLoggedIn, user } = $authState);
+  $: ({ isLoading, isLoggedIn, user } = $authState);
 
   // Handle file input or camera photo
   function handleFileInput(event) {

@@ -4,6 +4,7 @@
 let profile = null;
 let errorMessage = "";
 
+$: ({ isLoading, isLoggedIn, userProfile } = $authState);
 $: {
     if ($authState.isLoggedIn && $authState.userProfile) {
       profile = $authState.userProfile;
@@ -14,8 +15,9 @@ $: {
     }
   }
 </script>
-
-{#if profile}
+{#if isLoading}
+  <p>Loading profile...</p>
+{:else if isLoggedIn && userProfile}
   <div class="profile-page">
     <h1>Welcome, {profile.name}!</h1>
     <p>Username: {profile.username}</p>

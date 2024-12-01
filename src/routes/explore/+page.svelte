@@ -6,30 +6,32 @@
   let posts = [];
   let isLoading = true;
   let errorMessage = "";
-  let isLoggedIn = false;
-  $: ({ isLoggedIn } = $authState);
+   
+  $: ({ isLoading: isAuthLoading, isLoggedIn } = $authState);
 
+  $: if (!isAuthLoading && isLoggedIn) {
+    fetchPosts();
+  }
 
   // Fetch posts from Firestore
   async function fetchPosts() {
-    isLoading = true;
+    isLoadingPosts = true;
     try {
       const querySnapshot = await getDocs(collection(db, "posts"));
       posts = querySnapshot.docs.map((doc) => doc.data());
-      isLoading = false; // Set loading to false after fetching
+      isLoadingPosts = false; // Set loading to false after fetching
     } catch (error) {
       console.error("Error fetching posts:", error);
       errorMessage =
         error.code === "permission-denied"
           ? "You do not have permission to view posts. Please log in."
           : "An error occurred while fetching posts.";
-      isLoading = false;
+      isLoadingPosts = false;
     }
   }
-  fetchPosts();
 </script>
 
-{#if isLoading}
+{#if isAuthLoading}
   <p>Loading posts...</p>
 {:else if errorMessage}
   <p class="error">{errorMessage}</p>

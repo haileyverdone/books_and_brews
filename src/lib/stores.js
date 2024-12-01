@@ -49,6 +49,9 @@ onAuthStateChanged(auth, async (user) => {
     });
   }
 });
+authState.subscribe((state) => {
+  console.log("Current authState:", state);
+});
 
 
 
