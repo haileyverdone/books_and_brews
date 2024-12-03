@@ -1,35 +1,35 @@
 <script>
   import { goto } from '$app/navigation';
-  import { signInWithCustomToken, signInWithEmailAndPassword} from 'firebase/auth';
+  import { signInWithEmailAndPassword } from 'firebase/auth';
   import { auth } from '$lib/firebaseConfig';
-  
 
   let email = '';
-  let password = ''; 
+  let password = '';
   let errorMessage = '';
   let isLoading = false;
-  
 
   async function handleLogin() {
     errorMessage = '';
-    let isLoading = true;
-    
+    isLoading = true;
 
     try {
+      // Sign in with Firebase Authentication
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      console.log("Firebase Auth Login Successful:", user);
+
+      console.log('Firebase Auth Login Successful:', user);
 
       if (!user.emailVerified) {
         errorMessage = 'Email not verified. Please check your inbox.';
         return;
       }
-      await goto(`/profile/${user.uid}`);
 
+      // Redirect to profile page
+      await goto(`/profile/${user.uid}`);
     } catch (err) {
-      errorMessage = err.message || 'An error occured during login.'; // Display the error message
+      errorMessage = err.message || 'An error occurred during login.';
       console.error('Login error:', err);
-    }finally{
+    } finally {
       isLoading = false;
     }
   }
@@ -54,6 +54,7 @@
     {/if}
   </form>
 </div>
+
 
 <style>
   .login-container {

@@ -4,7 +4,7 @@
   import { authState } from '$lib/stores';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-
+ 
 
   // Navigation tabs
   let tabs = [
@@ -15,7 +15,7 @@
   ];
 
   let activeTab ='';
-  $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || 'Home';
+  $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name ||  ($page.url.pathname.startsWith("/profile") ? "Profile" : "Home");;
   $: console.log('Updated active tab:', activeTab);
 
   let isLoggedIn = false;
@@ -26,6 +26,8 @@
 
   // Reactive authState variables
   $: ({ isLoggedIn, isLoading, userEmail, uid, userProfile } = $authState);
+  $: console.log("Navbar authState:", $authState);
+
 
   // Logout function
     async function handleLogout() {
@@ -39,10 +41,6 @@
       }
     }
 
-
-  // Log the current state for debugging
-  $: console.log('Current auth state:', $authState);
-  $: console.log('Current active tab:', activeTab);
 </script>
 
 

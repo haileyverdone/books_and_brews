@@ -32,6 +32,7 @@ export async function registerUser(email, password, name, username) {
 export async function loginUser(email, password) {
   try {
     await setPersistence(auth, browserSessionPersistence);
+    console.log("Session persistence set successfully.");
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
@@ -43,10 +44,19 @@ export async function loginUser(email, password) {
     console.log('User logged in successfully:', user);
     return { success: true, user };
   } catch (error) {
-    console.error('Login error:', error);
-    const errorMessage = error.code === 'auth/user-not-found'
-      ? 'No user found with this email.'
-      : error.message || 'Invalid email or password';
+    console.error("Login error:", error);
+
+    let errorMessage = "An error occurred during login.";
+    if (error.code === "auth/user-not-found") {
+      errorMessage = "No user found with this email.";
+    } else if (error.code === "auth/wrong-password") {
+      errorMessage = "Incorrect password. Please try again.";
+    } else if (error.code === "auth/too-many-requests") {
+      errorMessage = "Too many login attempts. Please try again later.";
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
 
     return { success: false, message: errorMessage };
   }

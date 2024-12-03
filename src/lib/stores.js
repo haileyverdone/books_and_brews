@@ -14,13 +14,12 @@ export const authState = writable({
 
 onAuthStateChanged(auth, async (user) => {
   console.log("Auth state changed:", user);
+  console.log("Current auth state in Firebase:", auth.currentUser);
 
   if (user) {
     try {
-      console.log("Fetching profile for UID:", user.uid);
       const profile = await fetchUserProfile(user.uid);
       console.log("Fetched profile:", profile);
-
       authState.set({
         isLoading: false,
         isLoggedIn: true,
@@ -30,13 +29,6 @@ onAuthStateChanged(auth, async (user) => {
       });
     } catch (error) {
       console.error("Error fetching profile:", error);
-      authState.set({
-        isLoading: false,
-        isLoggedIn: true,
-        userEmail: user.email,
-        uid: user.uid,
-        userProfile: null,
-      });
     }
   } else {
     console.log("No user is logged in.");
@@ -49,9 +41,7 @@ onAuthStateChanged(auth, async (user) => {
     });
   }
 });
-authState.subscribe((state) => {
-  console.log("Current authState:", state);
-});
+
 
 
 

@@ -23,8 +23,12 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
-setPersistence(auth, browserSessionPersistence).catch((error) => {
-  console.error("Error setting session persistence:", error);
-}); 
+setPersistence(auth, browserSessionPersistence)
+    .then(() => {
+        console.log("Session persistence set successfully");
+    })
+    .catch((error) => {
+        console.error("Error setting session persistence:", error);
+    });
 
 export default app; 
