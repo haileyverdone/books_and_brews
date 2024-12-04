@@ -24,8 +24,10 @@
         return;
       }
 
-      // Redirect to profile page
-      await goto(`/profile/${user.uid}`);
+      console.log("Waiting for authState to update...");
+    setTimeout(() => {
+      goto(`/profile/${user.uid}`); // Redirect after auth state updates
+    }, 500); // Adjust delay if needed
     } catch (err) {
       errorMessage = err.message || 'An error occurred during login.';
       console.error('Login error:', err);

@@ -29,17 +29,24 @@
   $: console.log("Navbar authState:", $authState);
 
 
-  // Logout function
-    async function handleLogout() {
-      try {
-        await signOut(auth);
-        console.log('User logged out successfully');
-        goto('/'); // Redirect to home page
-      } catch (error) {
-        console.error('Error during logout:', error);
-        alert('Failed to log out. Please try again.');
-      }
-    }
+  async function handleLogout() {
+  try {
+    await signOut(auth);
+    console.log('User logged out successfully');
+    authState.set({
+      isLoading: false,
+      isLoggedIn: false,
+      userEmail: '',
+      uid: '',
+      userProfile: null,
+    });
+    goto('/'); // Redirect to home page
+  } catch (error) {
+    console.error('Error during logout:', error);
+    alert('Failed to log out. Please try again.');
+  }
+}
+
 
 </script>
 
@@ -68,6 +75,7 @@
               on:click={() => {
                 console.log('Tab clicked:', tab.name);
                 activeTab = tab.name;
+                goto(tab.href);
               }}
             >
               <i class="{tab.icon}"></i> 
