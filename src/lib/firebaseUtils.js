@@ -1,5 +1,5 @@
 import { auth, db } from './firebaseConfig';
-import { setPersistence, browserSessionPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendEmailVerification } from 'firebase/auth';
+import { setPersistence, browserSessionPersistence, createUserWithEmailAndPassword, signInWithCustomToken, signOut, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 // Register a new user and send a verification email
@@ -31,34 +31,28 @@ export async function registerUser(email, password, name, username) {
 // Login user and check email verification status
 export async function loginUser(email, password) {
   try {
+    const response = await fetch('api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to log in.');
+    }
+
+    console.log('Custom token received:', data.token);
+
+    // Log in using the custom token
     await setPersistence(auth, browserSessionPersistence);
-    console.log("Session persistence set successfully.");
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+    const userCredential = await signInWithCustomToken(auth, data.token);
 
-    if (!user.emailVerified) {
-      console.log("User email not verified:", user.email);
-      throw new Error('Email not verified. Please check your email for the verification link.');
-    }
-
-    console.log('User logged in successfully:', user);
-    return { success: true, user };
+    console.log('Logged in with custom token:', userCredential.user);
+    return { success: true, user: userCredential.user };
   } catch (error) {
-    console.error("Login error:", error);
-
-    let errorMessage = "An error occurred during login.";
-    if (error.code === "auth/user-not-found") {
-      errorMessage = "No user found with this email.";
-    } else if (error.code === "auth/wrong-password") {
-      errorMessage = "Incorrect password. Please try again.";
-    } else if (error.code === "auth/too-many-requests") {
-      errorMessage = "Too many login attempts. Please try again later.";
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-
-
-    return { success: false, message: errorMessage };
+    console.error('Login error:', error);
+    return { success: false, message: error.message || 'Login failed.' };
   }
 }
 
@@ -74,11 +68,8 @@ export async function logoutUser() {
   }
 }
 
-// Fetch user profile data
 export async function fetchUserProfile(uid) {
-  if (!uid) {
-    throw new Error('UID is required to fetch user profile.');
-  }
+  if (!uid) throw new Error('UID is required to fetch user profile.');
 
   try {
     const userDocRef = doc(db, "users", uid);
@@ -86,14 +77,14 @@ export async function fetchUserProfile(uid) {
 
     if (userDoc.exists()) {
       console.log('User profile fetched:', userDoc.data());
-      return userDoc.data(); // Return profile directly
+      return userDoc.data();
     } else {
-      console.warn('User profile not found:', uid); 
+      console.warn('User profile not found:', uid);
       return null;
     }
   } catch (error) {
     console.error('Error fetching profile:', error);
-    throw error;
+    throw new Error('Failed to fetch user profile. Please try again.');
   }
 }
 

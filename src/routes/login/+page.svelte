@@ -1,36 +1,35 @@
 <script>
   import { goto } from '$app/navigation';
-  import { signInWithEmailAndPassword } from 'firebase/auth';
-  import { auth } from '$lib/firebaseConfig';
+  import {loginUser} from '$lib/firebaseUtils';
+  import {authState} from '$lib/stores';
 
   let email = '';
   let password = '';
   let errorMessage = '';
   let isLoading = false;
 
+  $: if (!$authState.isLoading && $authState.isLoggedIn) {
+    goto(`/profile/${$authState.uid}`); // Redirect to profile if logged in
+  }
+
   async function handleLogin() {
     errorMessage = '';
     isLoading = true;
 
     try {
-      // Sign in with Firebase Authentication
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      // Call loginUser to handle authentication
+      const result = await loginUser(email, password);
 
-      console.log('Firebase Auth Login Successful:', user);
-
-      if (!user.emailVerified) {
-        errorMessage = 'Email not verified. Please check your inbox.';
-        return;
+      if (result.success) {
+        console.log('Login successful:', result.user);
+        // Navigate to profile page after successful login
+        goto(`/profile/${result.user.uid}`);
+      } else {
+        errorMessage = result.message || 'Login failed.';
       }
-
-      console.log("Waiting for authState to update...");
-    setTimeout(() => {
-      goto(`/profile/${user.uid}`); // Redirect after auth state updates
-    }, 500); // Adjust delay if needed
-    } catch (err) {
-      errorMessage = err.message || 'An error occurred during login.';
-      console.error('Login error:', err);
+    } catch (error) {
+      errorMessage = error.message || 'An error occurred during login.';
+      console.error('Login error:', error);
     } finally {
       isLoading = false;
     }

@@ -2,11 +2,10 @@
   import { signOut } from 'firebase/auth';
   import { auth } from "$lib/firebaseConfig";
   import { authState } from '$lib/stores';
-  import { page } from '$app/stores';
   import { goto } from '$app/navigation';
- 
+  import { page } from '$app/stores';
 
-  // Navigation tabs
+ 
   let tabs = [
     { name: 'Home', icon: 'bi bi-house-fill', href: '/' },
     { name: 'Create', icon: 'bi bi-plus-circle-fill', href: '/create' },
@@ -14,39 +13,23 @@
     { name: 'Events', icon: 'bi bi-calendar3', href: '/events' },
   ];
 
-  let activeTab ='';
-  $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name ||  ($page.url.pathname.startsWith("/profile") ? "Profile" : "Home");;
+  let activeTab = '';
+  $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || ($page.url.pathname.startsWith("/profile") ? "Profile" : "Home");
   $: console.log('Updated active tab:', activeTab);
 
-  let isLoggedIn = false;
-  let isLoading = true;
-  let userEmail = '';
-  let uid = '';
-  let userProfile = null;
 
-  // Reactive authState variables
   $: ({ isLoggedIn, isLoading, userEmail, uid, userProfile } = $authState);
-  $: console.log("Navbar authState:", $authState);
-
-
+ 
   async function handleLogout() {
-  try {
-    await signOut(auth);
-    console.log('User logged out successfully');
-    authState.set({
-      isLoading: false,
-      isLoggedIn: false,
-      userEmail: '',
-      uid: '',
-      userProfile: null,
-    });
-    goto('/'); // Redirect to home page
-  } catch (error) {
-    console.error('Error during logout:', error);
-    alert('Failed to log out. Please try again.');
+    try {
+      await signOut(auth);
+      console.log('User logged out successfully');
+      goto('/'); // Redirect to home page
+    } catch (error) {
+      console.error('Error during logout:', error);
+      alert('Failed to log out. Please try again.');
+    }
   }
-}
-
 
 </script>
 
@@ -75,7 +58,6 @@
               on:click={() => {
                 console.log('Tab clicked:', tab.name);
                 activeTab = tab.name;
-                goto(tab.href);
               }}
             >
               <i class="{tab.icon}"></i> 
