@@ -1,37 +1,19 @@
 <script>
-  import { authState } from '$lib/stores';
-  import { onMount } from 'svelte';
-  import { fetchUserProfile} from '$lib/firebaseUtils';
+import { authState, userStore, watchUser } from '$lib/stores';
 
   let profile = null;
-  let errorMessage = '';
-  let isLoading = true; // Initialize loading state
-  let isLoggedIn = false;
-  let uid = null;
+  $: profile = $userStore;
 
-  // Reactive subscription to authState
+	let errorMessage = '';
+	let isLoading = true; // Initialize loading state
+	let isLoggedIn = false;
+	let uid = null;
+
   $: ({ isLoading, isLoggedIn, uid } = $authState);
 
-  // Redirect to login if not logged in
-  onMount(async () => {
-    if (isLoading) return; // Don't proceed if auth state is still loading
-
-    if (!isLoggedIn) {
-      window.location.href = '/login'; // Redirect to login if not logged in
-    } else {
-      try {
-        profile = await fetchUserProfile(uid); // Fetch user profile
-        if (!profile) {
-          errorMessage = 'Profile not found. Please check your data.';
-        }
-      } catch (error) {
-        errorMessage = 'Failed to load profile data. Please try again later.';
-        console.error('Profile load error:', error);
-      } finally {
-        isLoading = false; // Mark loading as complete
-      }
-    }
-  });
+  $: if (isLoggedIn && uid) {
+		watchUser(uid); // Start watching the user
+	}
 </script>
 
 {#if isLoading}

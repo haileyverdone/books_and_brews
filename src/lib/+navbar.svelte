@@ -5,7 +5,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
 
-
+  
   // Define navigation tabs
   let tabs = [
     { name: 'Home', icon: 'bi bi-house-fill', href: '/' },
@@ -14,11 +14,19 @@
     { name: 'Events', icon: 'bi bi-calendar3', href: '/events' },
   ];
 
-  // Track active tab
-  let activeTab = '';
-  $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || 
-                 ($page.url.pathname.startsWith("/profile") ? "Profile" : "Home");
-  $: console.log('Updated active tab:', activeTab);
+  let activeTab ='';
+  $: {
+  const matchingTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href));
+  if (matchingTab) {
+    activeTab = matchingTab.name; // Match found, set to corresponding tab name
+  } else if ($page.url.pathname.startsWith("/profile")) {
+    activeTab = "Profile"; // Explicitly handle the Profile tab
+  } else {
+    activeTab = null; // Default to null for unmatched paths
+  }
+}
+
+$: console.log('Updated active tab:', activeTab);
 
   // Use reactive variables from authState
   $: ({ isLoggedIn, isLoading, userEmail, uid, userProfile } = $authState);
