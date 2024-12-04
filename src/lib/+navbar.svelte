@@ -5,7 +5,8 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
 
- 
+
+  // Define navigation tabs
   let tabs = [
     { name: 'Home', icon: 'bi bi-house-fill', href: '/' },
     { name: 'Create', icon: 'bi bi-plus-circle-fill', href: '/create' },
@@ -13,24 +14,25 @@
     { name: 'Events', icon: 'bi bi-calendar3', href: '/events' },
   ];
 
+  // Track active tab
   let activeTab = '';
-  $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || ($page.url.pathname.startsWith("/profile") ? "Profile" : "Home");
+  $: activeTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href))?.name || 
+                 ($page.url.pathname.startsWith("/profile") ? "Profile" : "Home");
   $: console.log('Updated active tab:', activeTab);
 
-
+  // Use reactive variables from authState
   $: ({ isLoggedIn, isLoading, userEmail, uid, userProfile } = $authState);
- 
+
   async function handleLogout() {
     try {
       await signOut(auth);
       console.log('User logged out successfully');
-      goto('/'); // Redirect to home page
+      goto('/'); // Redirect to the home page
     } catch (error) {
       console.error('Error during logout:', error);
       alert('Failed to log out. Please try again.');
     }
   }
-
 </script>
 
 

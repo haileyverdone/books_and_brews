@@ -49,6 +49,7 @@ export async function loginUser(email, password) {
     const userCredential = await signInWithCustomToken(auth, data.token);
 
     console.log('Logged in with custom token:', userCredential.user);
+  
     return { success: true, user: userCredential.user };
   } catch (error) {
     console.error('Login error:', error);

@@ -13,6 +13,7 @@ export const authState = writable({
 
 // Ensure `updateAuthState` properly resets the loading state
 const updateAuthState = async (user) => {
+  console.log("updateAuthState called. User:", user);
   if (user) {
     try {
       const profile = await fetchUserProfile(user.uid);
@@ -23,6 +24,7 @@ const updateAuthState = async (user) => {
         uid: user.uid,
         userProfile: profile || null,
       });
+      console.log("Auth state updated with user profile:", profile);
     } catch (error) {
       console.error('Error updating auth state:', error);
       authState.set({
@@ -34,6 +36,7 @@ const updateAuthState = async (user) => {
       });
     }
   } else {
+    console.log("No user is logged in.")
     authState.set({
       isLoading: false,
       isLoggedIn: false,

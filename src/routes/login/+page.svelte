@@ -1,31 +1,28 @@
 <script>
   import { goto } from '$app/navigation';
-  import {loginUser} from '$lib/firebaseUtils';
-  import {authState} from '$lib/stores';
+  import { loginUser } from '$lib/firebaseUtils';
+  import { authState } from '$lib/stores';
 
   let email = '';
   let password = '';
   let errorMessage = '';
   let isLoading = false;
 
+  // Automatically redirect if already logged in
   $: if (!$authState.isLoading && $authState.isLoggedIn) {
-    goto(`/profile/${$authState.uid}`); // Redirect to profile if logged in
+    goto(`/profile/${$authState.uid}`);
   }
 
-  async function handleLogin() {
+  async function handleLogin(event) {
+    event.preventDefault(); // Prevent the form from reloading the page
     errorMessage = '';
     isLoading = true;
 
     try {
-      // Call loginUser to handle authentication
       const result = await loginUser(email, password);
 
-      if (result.success) {
-        console.log('Login successful:', result.user);
-        // Navigate to profile page after successful login
-        goto(`/profile/${result.user.uid}`);
-      } else {
-        errorMessage = result.message || 'Login failed.';
+      if (!result.success) {
+        errorMessage = result.message;
       }
     } catch (error) {
       errorMessage = error.message || 'An error occurred during login.';
@@ -36,26 +33,41 @@
   }
 </script>
 
-<div class="login-container">
-  <h1>Log In</h1>
-  <form on:submit|preventDefault={handleLogin}>
-    <div class="form-group">
-      <label for="email">Email</label>
-      <input id="email" type="email" bind:value={email} required />
-    </div>
-    <div class="form-group">
-      <label for="password">Password</label>
-      <input id="password" type="password" bind:value={password} required />
-    </div>
-    <button type="submit" disabled={isLoading}>
-      {isLoading ? 'Logging In...' : 'Log In'}
-    </button>
-    {#if errorMessage}
-      <p class="error">{errorMessage}</p>
-    {/if}
-  </form>
-</div>
-
+{#if $authState.isLoading}
+  <p>Loading...</p>
+{:else}
+  <div class="login-container">
+    <h1>Log In</h1>
+    <form on:submit={handleLogin}>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          bind:value={email}
+          placeholder="Enter your email"
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          bind:value={password}
+          placeholder="Enter your password"
+          required
+        />
+      </div>
+      <button type="submit" disabled={isLoading}>
+        {isLoading ? 'Logging In...' : 'Log In'}
+      </button>
+      {#if errorMessage}
+        <p class="error">{errorMessage}</p>
+      {/if}
+    </form>
+  </div>
+{/if}
 
 <style>
   .login-container {
