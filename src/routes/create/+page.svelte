@@ -1,26 +1,47 @@
 <script>
-  import { authState } from '$lib/stores';
-  import { addDoc, collection } from 'firebase/firestore';
-  import { db } from '$lib/firebaseConfig';
-  import { goto } from '$app/navigation';
+import { authState } from '$lib/stores';
+import { addDoc, collection } from 'firebase/firestore';
+import { db } from '$lib/firebaseConfig';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { goto } from '$app/navigation';
 
-  let isLoggedIn = false;
-  let user = null;
-  let bookTitle = "";
-  let coffeeShop = "";
-  let description = "";
-  let imageFile = null;
-  let errorMessage = "";
-  let suggestions = []; 
-  let showSuggestions = false; 
-  let selectedSuggestionIndex = -1;
+const storage = getStorage();
 
-  $: ({ isLoading, isLoggedIn, userEmail, uid, userProfile } = $authState);
+let bookTitle = "";
+let coffeeShop = "";
+let description = "";
+let imageFile = null;
+let errorMessage = "";
+let suggestions = [];
+let showSuggestions = false;
+let placesSuggestions = [];
+let selectedSuggestionIndex = -1;
 
-  // Handle file input or camera photo
+$: ({ isLoading, isLoggedIn, uid } = $authState);
+
+// Redirect unauthenticated users
+$: if (!isLoading && !isLoggedIn) {
+  goto('/login');
+}
+
+  // Handle file input
   function handleFileInput(event) {
     imageFile = event.target.files[0];
   }
+
+  async function uploadImage(imageFile, uid) {
+  if (!imageFile) return null;
+
+  try {
+    const storageRef = ref(storage, `posts/${uid}/${imageFile.name}`);
+    await uploadBytes(storageRef, imageFile); // Upload file
+    const downloadURL = await getDownloadURL(storageRef); // Get public URL
+    return downloadURL;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    throw new Error('Failed to upload image.');
+  }
+}
 
   // Fetch book suggestions from Open Library API
   let debounceTimeout;
@@ -46,35 +67,99 @@
             : "https://via.placeholder.com/50x75?text=No+Cover",
         }));
         showSuggestions = suggestions.length > 0;
-        selectedSuggestionIndex = -1; // Reset selection
+        selectedSuggestionIndex = -1;
       } catch (error) {
         console.error("Error fetching book suggestions:", error);
       }
-    }, 300); 
+    }, 300);
   }
 
-  // Handle suggestion selection
-  function selectBookSuggestion(book) {
-    bookTitle = book.title; // Update the book title with the selected suggestion
-    showSuggestions = false; // Hide suggestions after selection
-  }
+  // Initialize Google Places Autocomplete
+  let autocomplete;
+  function initializePlacesAutocomplete() {
+  const input = document.getElementById('coffeeShop');
+  const autocomplete = new google.maps.places.Autocomplete(input, {
+    types: ['establishment'],
+  });
 
-  // Handle keyboard navigation
-  function handleKeydown(event) {
-    if (event.key === "ArrowDown") {
-      selectedSuggestionIndex = (selectedSuggestionIndex + 1) % suggestions.length;
-    } else if (event.key === "ArrowUp") {
-      selectedSuggestionIndex =
-        (selectedSuggestionIndex - 1 + suggestions.length) % suggestions.length;
-    } else if (event.key === "Enter" && selectedSuggestionIndex >= 0) {
-      selectBookSuggestion(suggestions[selectedSuggestionIndex]);
-      event.preventDefault(); // Prevent form submission
+  autocomplete.addListener('place_changed', () => {
+    const place = autocomplete.getPlace();
+
+    if (place) {
+      coffeeShop = place.name;
+      placesSuggestions = [
+        {
+          name: place.name,
+          address: place.formatted_address || 'Address unavailable',
+          logo:
+            place.photos && place.photos.length > 0
+              ? place.photos[0].getUrl({ maxWidth: 50, maxHeight: 50 })
+              : 'https://via.placeholder.com/50',
+        },
+      ];
     }
+  });
+}
+
+  // Fetch place suggestions using Google Places API
+async function fetchPlacesSuggestions(query) {
+  if (!query) {
+    placesSuggestions = [];
+    return;
   }
 
+  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+  const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&key=${apiKey}&types=establishment`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    placesSuggestions = data.predictions.map((place) => ({
+      placeId: place.place_id,
+      description: place.description,
+    }));
+
+    // Fetch additional details for each place
+    for (let suggestion of placesSuggestions) {
+      const details = await fetchPlaceDetails(suggestion.placeId);
+      suggestion.name = details.name || suggestion.description;
+      suggestion.address = details.formatted_address || "Address unavailable";
+      suggestion.logo =
+        details.photos && details.photos.length > 0
+          ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=100&photoreference=${details.photos[0].photo_reference}&key=${apiKey}`
+          : "https://via.placeholder.com/100"; // Default placeholder if no photo
+    }
+  } catch (error) {
+    console.error("Error fetching coffee shop suggestions:", error);
+  }
+}
+
+// Fetch details for a specific place
+      async function fetchPlaceDetails(placeId) {
+        const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${apiKey}`;
+
+        try {
+          const response = await fetch(detailsUrl);
+          const data = await response.json();
+
+          if (data.status === "OK") {
+            return data.result;
+          } else {
+            console.error("Error fetching place details:", data.status);
+            return {};
+          }
+        } catch (error) {
+          console.error("Error fetching place details:", error);
+          return {};
+        }
+      }
+
+
+  // Create post
   async function createPost(event) {
     event.preventDefault();
-
 
     if (!isLoggedIn || !uid) {
       errorMessage = "You must be logged in to create a post.";
@@ -82,19 +167,32 @@
     }
 
     try {
-      const postData = {
-        userId: user.uid,
-        bookTitle,
-        coffeeShop,
-        description,
-        createdAt: new Date(),
-      };
+    // Upload image and get URL
+    let imageUrl = null;
+    if (imageFile) {
+      imageUrl = await uploadImage(imageFile, uid);
+    }
 
-      console.log("Post data:", postData);
-      // TODO: Add image upload logic here (if needed)
-
-      // Redirect to Explore Page after successful post creation
+    // Create post data
+    const postData = {
+      userId: uid,
+      username: userProfile?.username || "Unknown User", // Add username
+      bookTitle,
+      coffeeShop,
+      description,
+      imageUrl: uploadedImageUrl || "", // Include the image URL if uploaded
+      createdAt: new Date(),
+    };
+      
       await addDoc(collection(db, "posts"), postData);
+
+      // Clear the form
+      bookTitle = "";
+      coffeeShop = "";
+      description = "";
+      imageFile = null;
+
+      // Redirect to Explore page
       goto("/explore");
     } catch (error) {
       console.error("Error creating post:", error);
@@ -103,6 +201,7 @@
   }
 </script>
 
+<!-- Render the page -->
 {#if isLoading}
   <div class="loading">
     <p>Loading...</p>
@@ -118,6 +217,7 @@
   <div class="form-container">
     <h2>Create a Post!</h2>
     <form on:submit|preventDefault={createPost}>
+      <!-- Book Title -->
       <div class="input-container">
         <label for="bookTitle">Book Title:</label>
         <input
@@ -126,50 +226,67 @@
           bind:value={bookTitle}
           placeholder="Enter the book title"
           on:input={() => fetchBookSuggestions(bookTitle)}
-          on:keydown={handleKeydown}
         />
         {#if showSuggestions}
-  <ul class="suggestions">
-    {#each suggestions as book, index}
-      <li>
-        <button
-          type="button"
-          class="{selectedSuggestionIndex === index ? 'highlighted' : ''}"
-          on:click={() => selectBookSuggestion(book)}
-          on:keydown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              selectBookSuggestion(book);
-            }
-          }}
-        >
-        <img src={book.cover} alt="{book.title}" class="book-cover" />
-        <div class="book-info">
-          {#if book.title}
-            <span class="book-title">{book.title}</span>
-            {#if book.author_name && book.author_name.length > 0}
-              <span class="book-author"> by {book.author_name[0]}</span>
-            {/if}
-          {:else}
-            <span class="book-title">Unknown Title</span>
-          {/if}
-        </div>
-      </li>
-    {/each}
-  </ul>
-{/if}
+          <ul class="suggestions">
+            {#each suggestions as book, index}
+              <li>
+                <button
+                type="button"
+                on:click={() => {
+                  bookTitle = book.title;
+                  suggestions = [];
+                  showSuggestions = false; 
+                }}
+              >
+                  <img src={book.cover} alt="{book.title}" class="book-cover" />
+                  <div class="book-info">
+                    <span class="book-title">{book.title}</span>
+                    <span class="book-author">{book.author}</span>
+                  </div>
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </div>
 
-</div>
-      
+      <!-- Coffee Shop -->
       <div>
         <label for="coffeeShop">Coffee Shop:</label>
         <input
           type="text"
           id="coffeeShop"
           bind:value={coffeeShop}
-          placeholder="Enter the coffee shop name"
+          placeholder="Search for a coffee shop"
+          on:focus={initializePlacesAutocomplete}
         />
-      </div>
-
+        {#if placesSuggestions.length > 0}
+          <ul class="suggestions">
+            {#each placesSuggestions as place}
+              <li>
+                <button
+                  type="button"
+                  on:click={() => {
+                    coffeeShop = place.name; // Select name
+                    placesSuggestions = []; // Clear suggestions
+                  }}
+                >
+                  <!-- Display Logo -->
+                  <img src={place.logo} alt="Logo" class="place-logo" />
+                  <div class="place-details">
+                    <!-- Display Name -->
+                    <span class="place-name">{place.name}</span>
+                    <!-- Display Address -->
+                    <span class="place-address">{place.address}</span>
+                  </div>
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </div>      
+      <!-- Description -->
       <div>
         <label for="description">Description:</label>
         <textarea
@@ -179,6 +296,7 @@
         ></textarea>
       </div>
 
+      <!-- Image Upload -->
       <div>
         <label for="image">Upload Photo:</label>
         <input
@@ -193,11 +311,13 @@
 
       <button type="submit">Create Post</button>
     </form>
+
     {#if errorMessage}
       <p class="error">{errorMessage}</p>
     {/if}
   </div>
 {/if}
+
 
 
 <style>
@@ -304,6 +424,7 @@
   max-height: 300px; /* Set max height to avoid showing too many results */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow for better visibility */
 }
+
 .suggestions li {
   display: flex;
   align-items: center;
@@ -316,9 +437,8 @@
   border-bottom: none;
 }
 
-
 .suggestions button {
-  all: unset; /* Reset button styles */
+  all: unset;
   display: flex;
   align-items: center;
   width: 100%;
@@ -327,34 +447,30 @@
   cursor: pointer;
 }
 
-.suggestions button.highlighted {
-  background-color: #f0f0f0;
-}
-
 .suggestions button:hover {
-  background-color: #e0e0e0;
-}
-.book-cover {
-  width: 50px;
-  height: 75px;
-  margin-right: 10px; /* Space between the cover image and text */
-  border-radius: 4px;
-  object-fit: cover; /* Ensure the image maintains aspect ratio */
-}
-.book-info {
-  display: inline-block;
-  vertical-align: top;
-  max-width: calc(100% - 60px);
+  background-color: #f9f9f9;
 }
 
-.book-title {
+.place-logo {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  object-fit: cover;
+  margin-right: 10px;
+}
+
+.place-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.place-name {
   font-weight: bold;
   font-size: 1rem;
-  margin-bottom: 2px;
 }
 
-.book-author {
-  font-size: 0.9rem;
+.place-address {
+  font-size: 0.85rem;
   color: #555;
 }
 

@@ -26,8 +26,6 @@
   }
 }
 
-$: console.log('Updated active tab:', activeTab);
-
   // Use reactive variables from authState
   $: ({ isLoggedIn, isLoading, userEmail, uid, userProfile } = $authState);
 
@@ -62,17 +60,16 @@ $: console.log('Updated active tab:', activeTab);
       <ul class="navbar-nav ms-auto">
         {#each tabs as tab}
           <li class="nav-item">
-            <a
-              class="nav-link {activeTab === tab.name ? 'active' : ''}"
-              href={tab.href}
-              on:click={() => {
-                console.log('Tab clicked:', tab.name);
-                activeTab = tab.name;
-              }}
-            >
-              <i class="{tab.icon}"></i> 
-              <span class="d-none d-lg-inline">{tab.name}</span>
-            </a>
+            <button
+            class="nav-link {activeTab === tab.name ? 'active' : ''}"
+            on:click={() => {
+              console.log("Tab clicked:", tab.name);
+              goto(tab.href); // Use SvelteKit navigation
+            }}
+          >
+            <i class="{tab.icon}"></i>
+            <span class="d-none d-lg-inline">{tab.name}</span>
+          </button>
           </li>
         {/each}
 
