@@ -5,35 +5,46 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
 
-  
-  // Define navigation tabs
   let tabs = [
     { name: 'Home', icon: 'bi bi-house-fill', href: '/' },
     { name: 'Create', icon: 'bi bi-plus-circle-fill', href: '/create' },
     { name: 'Explore', icon: 'bi bi-search', href: '/explore' },
     { name: 'Events', icon: 'bi bi-calendar3', href: '/events' },
   ];
+  const profileSubpages = [
+  { name: "Login", href: "/login" },
+  { name: "Register", href: "/register" }
+  ];
+
 
   let activeTab ='';
   $: {
-  const matchingTab = tabs.find(tab => $page.url.pathname.startsWith(tab.href));
+  const matchingTab = tabs.find(tab => {
+    if (tab.href === "/") {
+      return $page.url.pathname === "/";
+    } else if ($page.url.pathname.startsWith("/profile")) {
+      return tab.name === "Profile";
+    } else {
+      return $page.url.pathname.startsWith(tab.href);
+    }
+  });
+
   if (matchingTab) {
-    activeTab = matchingTab.name; // Match found, set to corresponding tab name
-  } else if ($page.url.pathname.startsWith("/profile")) {
-    activeTab = "Profile"; // Explicitly handle the Profile tab
+    activeTab = matchingTab.name; 
   } else {
-    activeTab = null; // Default to null for unmatched paths
+    activeTab = null; 
   }
+
+  console.log("Active Tab:", activeTab);
 }
 
-  // Use reactive variables from authState
   $: ({ isLoggedIn, isLoading, userEmail, uid, userProfile } = $authState);
 
   async function handleLogout() {
     try {
       await signOut(auth);
       console.log('User logged out successfully');
-      goto('/'); // Redirect to the home page
+      goto('/'); 
     } catch (error) {
       console.error('Error during logout:', error);
       alert('Failed to log out. Please try again.');
@@ -64,7 +75,8 @@
             class="nav-link {activeTab === tab.name ? 'active' : ''}"
             on:click={() => {
               console.log("Tab clicked:", tab.name);
-              goto(tab.href); // Use SvelteKit navigation
+              goto(tab.href); 
+              document.activeElement.blur();
             }}
           >
             <i class="{tab.icon}"></i>
@@ -74,7 +86,7 @@
         {/each}
 
         <li class="nav-item dropdown">
-          <button class="btn btn-link nav-link dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+          <button class="btn btn-link nav-link dropdown-toggle {activeTab === 'Profile' ? 'active' : ''}" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-person-fill"></i> Profile
           </button>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
@@ -91,16 +103,25 @@
             {/if}
             <li><button class="dropdown-item" on:click={handleLogout}>Log Out</button></li>
           {:else}
-            <li><a class="dropdown-item" href="/login">Log In</a></li>
-            <li><a class="dropdown-item" href="/register">Register</a></li>
+            {#each profileSubpages as subpage}
+              <li>
+                <button
+                  class="dropdown-item {activeTab === 'Profile' && $page.url.pathname === subpage.href ? 'active' : ''}"
+                  on:click={() => {
+                    goto(subpage.href);
+                    document.activeElement.blur();
+                  }}
+                >
+                  {subpage.name}
+                </button>
+              </li>
+            {/each}
           {/if}
-                  
-          </ul>
-        </li>
-      </ul>
+        </ul>
+      </li>
     </div>
   </nav>
-</div>
+</div>    
 
 <style>
   .nav-link {
