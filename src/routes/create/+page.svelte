@@ -15,9 +15,9 @@ let errorMessage = "";
 let suggestions = [];
 let showSuggestions = false;
 let placesSuggestions = [];
-let selectedSuggestionIndex = -1;
 
-$: ({ isLoading, isLoggedIn, uid } = $authState);
+
+$: ({ isLoading, isLoggedIn, uid, userProfile } = $authState);
 
 // Redirect unauthenticated users
 $: if (!isLoading && !isLoggedIn) {
@@ -48,7 +48,7 @@ $: if (!isLoading && !isLoggedIn) {
   async function fetchBookSuggestions(query) {
     clearTimeout(debounceTimeout);
 
-    if (!query) {
+    if (!query || !showSuggestions) {
       suggestions = [];
       showSuggestions = false;
       return;
@@ -67,18 +67,16 @@ $: if (!isLoading && !isLoggedIn) {
             : "https://via.placeholder.com/50x75?text=No+Cover",
         }));
         showSuggestions = suggestions.length > 0;
-        selectedSuggestionIndex = -1;
       } catch (error) {
         console.error("Error fetching book suggestions:", error);
       }
     }, 300);
   }
 
-  // Initialize Google Places Autocomplete
-  let autocomplete;
+  
   function initializePlacesAutocomplete() {
   const input = document.getElementById('coffeeShop');
-  const autocomplete = new google.maps.places.Autocomplete(input, {
+  autocomplete = new google.maps.places.Autocomplete(input, {
     types: ['establishment'],
   });
 
@@ -101,7 +99,7 @@ $: if (!isLoading && !isLoggedIn) {
   });
 }
 
-  // Fetch place suggestions using Google Places API
+  
 async function fetchPlacesSuggestions(query) {
   if (!query) {
     placesSuggestions = [];
@@ -120,7 +118,7 @@ async function fetchPlacesSuggestions(query) {
       description: place.description,
     }));
 
-    // Fetch additional details for each place
+  
     for (let suggestion of placesSuggestions) {
       const details = await fetchPlaceDetails(suggestion.placeId);
       suggestion.name = details.name || suggestion.description;
@@ -135,7 +133,7 @@ async function fetchPlacesSuggestions(query) {
   }
 }
 
-// Fetch details for a specific place
+
       async function fetchPlaceDetails(placeId) {
         const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
         const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${apiKey}`;
@@ -157,42 +155,40 @@ async function fetchPlacesSuggestions(query) {
       }
 
 
+  
   // Create post
   async function createPost(event) {
     event.preventDefault();
 
+ 
     if (!isLoggedIn || !uid) {
       errorMessage = "You must be logged in to create a post.";
       return;
     }
 
     try {
-    // Upload image and get URL
     let imageUrl = null;
     if (imageFile) {
       imageUrl = await uploadImage(imageFile, uid);
     }
 
-    // Create post data
     const postData = {
       userId: uid,
-      username: userProfile?.username || "Unknown User", // Add username
+      username: userProfile?.username || "Unknown User", 
       bookTitle,
       coffeeShop,
       description,
-      imageUrl: uploadedImageUrl || "", // Include the image URL if uploaded
+      imageUrl: imageUrl || "", 
       createdAt: new Date(),
     };
       
       await addDoc(collection(db, "posts"), postData);
 
-      // Clear the form
       bookTitle = "";
       coffeeShop = "";
       description = "";
       imageFile = null;
 
-      // Redirect to Explore page
       goto("/explore");
     } catch (error) {
       console.error("Error creating post:", error);
@@ -225,7 +221,10 @@ async function fetchPlacesSuggestions(query) {
           id="bookTitle"
           bind:value={bookTitle}
           placeholder="Enter the book title"
-          on:input={() => fetchBookSuggestions(bookTitle)}
+          on:input={() => {
+            if(!showSuggestions) return;
+            fetchBookSuggestions(bookTitle);
+          }}
         />
         {#if showSuggestions}
           <ul class="suggestions">
@@ -419,7 +418,7 @@ async function fetchPlacesSuggestions(query) {
   background-color: white;
   position: absolute;
   width: 100%;
-  z-index: 10;
+  z-index: 1000;
   overflow-y: auto; /* Adds a scrollbar if needed */
   max-height: 300px; /* Set max height to avoid showing too many results */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow for better visibility */

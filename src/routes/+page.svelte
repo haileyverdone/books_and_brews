@@ -52,9 +52,12 @@
 
   
 <style>
+  
   .carousel-inner {
     height: 400px;
-    margin: 0 auto;
+    margin: 0 ;
+    padding: 0;
+    border: none;
     margin-top: 5px;
   }
 
@@ -63,6 +66,9 @@
     align-items: center;
     justify-content: center;
     height: 400px;
+    margin: 0;
+    padding: 0;
+
   }
 
   .carousel-indicators {

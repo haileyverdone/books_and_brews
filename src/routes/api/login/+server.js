@@ -19,7 +19,6 @@ export async function POST({ request }) {
     }
     
     const token = await adminAuth.createCustomToken(userRecord.uid);
-    console.log("Generated custom token:", token);
 
     return new Response(
       JSON.stringify({ token, uid: userRecord.uid, message: 'Login successful' }),
