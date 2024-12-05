@@ -17,6 +17,7 @@ let showSuggestions = false;
 let placesSuggestions = [];
 
 
+
 $: ({ isLoading, isLoggedIn, uid, userProfile } = $authState);
 
 // Redirect unauthenticated users
@@ -46,7 +47,7 @@ $: if (!isLoading && !isLoggedIn) {
   // Fetch book suggestions from Open Library API
   let debounceTimeout;
   async function fetchBookSuggestions(query) {
-    clearTimeout(debounceTimeout);
+     clearTimeout(debounceTimeout);
 
     if (!query || !showSuggestions) {
       suggestions = [];
@@ -221,10 +222,8 @@ async function fetchPlacesSuggestions(query) {
           id="bookTitle"
           bind:value={bookTitle}
           placeholder="Enter the book title"
-          on:input={() => {
-            if(!showSuggestions) return;
-            fetchBookSuggestions(bookTitle);
-          }}
+          on:input={() => 
+            fetchBookSuggestions(bookTitle)}
         />
         {#if showSuggestions}
           <ul class="suggestions">
@@ -415,13 +414,14 @@ async function fetchPlacesSuggestions(query) {
   margin: 0;
   border: 1px solid #ccc;
   border-radius: 4px;
-  background-color: white;
+  background-color: yellow;
   position: absolute;
   width: 100%;
-  z-index: 1000;
+  z-index: 10;
   overflow-y: auto; /* Adds a scrollbar if needed */
   max-height: 300px; /* Set max height to avoid showing too many results */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow for better visibility */
+  display: block;
 }
 
 .suggestions li {
