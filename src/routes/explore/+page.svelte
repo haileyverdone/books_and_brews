@@ -1,14 +1,14 @@
 <script>
+  import { goto } from '$app/navigation';
   import { authState } from '$lib/stores';
-  import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+  import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
   import { db } from '$lib/firebaseConfig';
   import { onMount } from 'svelte';
 
   let posts = [];
   let isLoading = true;
   let errorMessage = '';
-  let selectedPost = null; // Currently selected post for the modal
-  let replies = {}; // Store replies for each post
+  let selectedPost = null;
 
   // Fetch posts from Firestore
   async function fetchPosts() {
@@ -16,7 +16,6 @@
     try {
       const querySnapshot = await getDocs(collection(db, 'posts'));
       posts = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      replies = posts.reduce((acc, post) => ({ ...acc, [post.id]: '' }), {}); // Initialize replies
     } catch (error) {
       console.error('Error fetching posts:', error);
       errorMessage = 'Error fetching posts. Please try again.';
@@ -25,23 +24,17 @@
     }
   }
 
-  // Add a reply to a post
-  async function addReply(postId, replyText) {
-    if (!replyText.trim()) return;
-
-    const post = posts.find((p) => p.id === postId);
-    const postDoc = doc(db, 'posts', postId);
+  // Delete a post
+  async function deletePost(postId) {
+    const confirmDelete = confirm('Are you sure you want to delete this post?');
+    if (!confirmDelete) return;
 
     try {
-      const newReply = { username: authState.userProfile.name, reply: replyText };
-      const updatedReplies = post.replies ? [...post.replies, newReply] : [newReply];
-      await updateDoc(postDoc, { replies: updatedReplies });
-
-      // Update UI
-      post.replies = updatedReplies;
-      replies[postId] = ''; // Clear input
+      await deleteDoc(doc(db, 'posts', postId));
+      posts = posts.filter((post) => post.id !== postId);
     } catch (error) {
-      console.error('Error adding reply:', error);
+      console.error('Error deleting post:', error);
+      alert('Failed to delete post. Please try again.');
     }
   }
 
@@ -58,237 +51,142 @@
   onMount(fetchPosts);
 </script>
 
-<!-- Explore Page -->
-{#if isLoading}
-  <p>Loading posts...</p>
-{:else if errorMessage}
-  <p class="error">{errorMessage}</p>
-{:else if posts.length === 0}
-  <p>No posts to display. Create one to get started!</p>
-{:else}
-  <div class="explore-grid">
-    {#each posts as post(post.id)}
-    <div class="post-tile" role="button" tabindex="0" on:click={() => openPost(post)} on:keydown={(e) => e.key === 'Enter' && openPost(post)}>
-      <!-- Post Image -->
-      {#if post.imageUrl}
-        <img src={post.imageUrl} alt={`Image for ${post.bookTitle || 'Post'}`} class="post-image" />
-      {:else}
-        <div class="placeholder-image" aria-hidden="true"></div>
-      {/if}
-  
-      <!-- Post Info -->
-      <div class="post-info">
-        <p class="username">@{post.username || ""}</p>
-        <p class="title">{post.bookTitle || ""}</p>
-        <p class="coffee-shop">{post.coffeeShop || ""}</p>
+<div class="container my-5">
+  {#if isLoading}
+    <div class="text-center">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
       </div>
+      <p>Loading...</p>
     </div>
-  {/each}
-</div>
-
-  <!-- Detailed View Modal -->
-  {#if selectedPost}
-    <div class="modal-overlay">
-      <div class="modal">
-        <button class="close-btn" on:click={closePost}>X</button>
-        <!-- Post Image -->
-        {#if selectedPost.imageUrl}
-        <img 
-          src={selectedPost.imageUrl} 
-          alt="{selectedPost.bookTitle || 'Post Image'}" 
-          class="modal-image" 
-        />
-      {/if}
-      
-
-        <!-- Post Details -->
-        <div class="modal-info">
-          <p class="username">@{selectedPost.username || "Unknown User"}</p>
-          <p class="title">{selectedPost.bookTitle || "Untitled"}</p>
-          <p class="coffee-shop">{selectedPost.coffeeShop || ''}</p>
-          <p class="description">{selectedPost.description || ''}</p>
+  {:else if !$authState.isLoggedIn}
+    <div class="text-center">
+      <h2>Welcome to Books & Brews</h2>
+      <p>You need to log in or create an account to explore posts.</p>
+      <button class="btn btn-primary me-2" on:click={() => goto('/login')}>Log In</button>
+      <button class="btn btn-secondary" on:click={() => goto('/register')}>Sign Up</button>
+    </div>
+  {:else if posts.length === 0}
+    <p class="text-center">No posts to display. Create one to get started!</p>
+  {:else}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+      {#each posts as post (post.id)}
+        <div class="col">
+          <div
+            class="card h-100 post-card"
+            tabindex="0"
+            role="button"
+            aria-label="View post details"
+            on:click={() => openPost(post)}
+            on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && openPost(post)}
+          >
+            {#if post.imageUrl}
+              <img
+                src={post.imageUrl}
+                class="card-img-top"
+                alt="{post.bookTitle || 'Post'}"
+              />
+            {/if}
+            <div class="card-body">
+              <h6 class="card-title text-truncate">@{post.username || 'Unknown User'}</h6>
+              <p class="card-text text-truncate">{post.bookTitle || ''}</p>
+            </div>
+          </div>
         </div>
+      {/each}
+    </div>
 
-        <!-- Replies -->
-        <div class="replies-section">
-          <p class="replies-title">Replies:</p>
-          {#if selectedPost.replies && selectedPost.replies.length > 0}
-            <ul class="replies-list">
-              {#each selectedPost.replies as reply}
-                <li>
-                  <span class="reply-username">@{reply.username}</span>: {reply.reply}
-                </li>
-              {/each}
-            </ul>
-          {:else}
-            <p class="no-replies">No replies yet. Be the first to reply!</p>
-          {/if}
+    <!-- Detailed View Modal -->
+    {#if selectedPost}
+      <div class="modal fade show" style="display: block;" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">@{selectedPost.username || 'Unknown User'}</h5>
+              <button type="button" class="btn-close" aria-label="Close" on:click={closePost}></button>
+            </div>
+            <div class="modal-body">
+              {#if selectedPost.imageUrl}
+                <img
+                  src={selectedPost.imageUrl}
+                  alt="{selectedPost.bookTitle || 'Post Image'}"
+                  class="img-fluid mb-3"
+                />
+              {/if}
+              <p><strong>Title:</strong> {selectedPost.bookTitle || 'Untitled'}</p>
+              <p>
+                <strong>Location:</strong>
+                {#if selectedPost.coffeeShop}
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      selectedPost.coffeeShop
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {selectedPost.coffeeShop}
+                  </a>
+                {:else}
+                  Not provided
+                {/if}
+              </p>
+              <p>{selectedPost.description || ''}</p>
 
-          <!-- Add Reply -->
-          <div class="add-reply">
-            <input
-              type="text"
-              placeholder="Write a reply..."
-              bind:value={replies[selectedPost.id]}
-            />
-            <button on:click={() => addReply(selectedPost.id, replies[selectedPost.id])}>
-              Reply
-            </button>
+              <!-- Edit/Delete Options for Owner -->
+              {#if selectedPost.userId === $authState.uid}
+                <div class="mt-3">
+                  <button
+                    class="btn btn-warning me-2"
+                    on:click={() => alert('Edit functionality coming soon!')}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    class="btn btn-danger"
+                    on:click={() => deletePost(selectedPost.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              {/if}
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" on:click={closePost}>Close</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    {/if}
   {/if}
-{/if}
+</div>
 
 <style>
 
-  .explore-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Adjust column width */
-  gap: 1rem;
-  padding: 1rem;
+/* Card Styling */
+.post-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-
-.post-tile {
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    overflow: hidden;
-    cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease;
-  }
-
-
-.post-tile:hover {
-  transform: scale(1.03);
-  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+.post-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.post-image {
-  width: 100%;
-  height: 200px;
+.post-card img {
+  height: 150px;
   object-fit: cover;
 }
 
-.placeholder-image {
-  width: 100%;
-  height: 200px;
-  background-color: #f0f0f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  color: #888;
+/* Modal Styling */
+.modal-content {
+  border-radius: 10px;
 }
 
-.post-info {
-  padding: 1rem;
+.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
-.post-info .username {
-  font-weight: bold;
-  font-size: 1rem;
-  margin: 0.5rem 0;
-}
-
-.post-info .title,
-.post-info .coffee-shop {
-  font-size: 0.9rem;
-  color: #555;
-  margin: 0.3rem 0;
-}
-
-
-  /* Modal Overlay */
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-
-  .modal {
-    background: #fff;
-    border-radius: 8px;
-    padding: 2rem;
-    width: 90%;
-    max-width: 600px;
-    text-align: center;
-    position: relative;
-  }
-
-  .close-btn {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-  }
-
-  .modal-image {
-    width: 100%;
-    max-height: 300px;
-    object-fit: cover;
-    margin-bottom: 1rem;
-  }
-
-  .modal-info {
-    text-align: left;
-    margin-bottom: 1rem;
-  }
-
-  .replies-section {
-    text-align: left;
-    margin-top: 1rem;
-  }
-
-  .replies-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .replies-list li {
-    margin-bottom: 0.5rem;
-    font-size: 0.85rem;
-  }
-
-  .add-reply {
-    display: flex;
-    margin-top: 1rem;
-  }
-
-  .add-reply input {
-    flex: 1;
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin-right: 0.5rem;
-  }
-
-  .add-reply button {
-    padding: 0.5rem 1rem;
-    background-color: #007BFF;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-
-  .add-reply button:hover {
-    background-color: #0056b3;
-  }
-
 </style>
