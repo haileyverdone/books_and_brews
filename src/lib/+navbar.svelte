@@ -158,7 +158,11 @@
 
 
   .navbar-collapse {
-    justify-content: center;
+    position: absolute;
+    top: 100%;
+    right: 0;
+   
+    width: 100%;
   }
 
   .navbar-toggler {
