@@ -158,11 +158,7 @@
 
 
   .navbar-collapse {
-    position: absolute;
-    top: 100%;
-    right: 0;
-   
-    width: 100%;
+    justify-content: center;
   }
 
   .navbar-toggler {
@@ -170,7 +166,7 @@
   }
   @media (max-width: 992px) {
   .navbar-collapse {
-    justify-content: right;
+    justify-content: center;
   }
 
   .navbar-nav {
