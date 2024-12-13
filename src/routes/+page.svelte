@@ -1,11 +1,11 @@
 <div id="myCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="2000">
   <ol class="carousel-indicators">
-    <li data-bs-target="#myCarousel" data-bs-slide-to="0" class="active"></li>
-    <li data-bs-target="#myCarousel" data-bs-slide-to="1"></li>
-    <li data-bs-target="#myCarousel" data-bs-slide-to="2"></li>
+    <li data-target="#myCarousel" data-bs-slide-to="0" class="active"></li>
+    <li data-target="#myCarousel" data-bs-slide-to="1"></li>
+    <li data-target="#myCarousel" data-bs-slide-to="2"></li>
   </ol>
 
-  <div class="carousel-inner" role="listbox">
+  <div class="carousel-inner">
     <div class="carousel-item active" style="background-color: #769898;">
       <div class="carousel-content">
         <h1>Welcome</h1>
@@ -43,20 +43,12 @@
 </section>
 
 
-
-
-
-<footer>
-  <p>Books & Brews © 2024</p>
-</footer>
-
   
 <style>
   
   .carousel-inner {
-    height: 400px;
-    margin: 0 auto;
-    margin-top: 5px;
+    margin: 0;
+    padding: 0;
   }
 
   .carousel-item {
@@ -75,12 +67,13 @@
   }
   h1{
     font-family: Georgia, 'Times New Roman', Times, serif;
-    size: 40;
+    font-size: 40;
   }
   
   .featured {
   display: flex;
   justify-content: space-between;
+  gap: 20px;
   padding: 20px;
 }
 

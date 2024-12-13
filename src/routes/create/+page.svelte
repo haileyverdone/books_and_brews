@@ -130,7 +130,7 @@
       </div>
       <p>Loading...</p>
     </div>
-  {:else if !isLoggedIn}
+  {:else if !$authState.isLoggedIn}
     <div class="text-center">
       <h2>Welcome to Books & Brews</h2>
       <p>You need to log in or create an account to create a post.</p>
