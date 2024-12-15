@@ -1,218 +1,158 @@
 <script>
-  import { authState } from '$lib/stores';
-  import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
-  import { getDatabase, ref, get, push } from 'firebase/database';
-  import { geocodeLocation, calculateDistance } from '$lib/googleApi';
-  import { loadGoogleMapsAutocomplete } from '$lib/googleAutocomplete'; // Helper for autocomplete
+  import { getDatabase, ref, push } from 'firebase/database';
+  import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+  import { geocodeLocation } from '$lib/googleApi';
+  import { loadGoogleMapsAutocomplete } from '$lib/googleAutocomplete';
   import { db } from '$lib/firebaseConfig';
 
-  let isLoading = true; // Initial loading state
-  let isFindingNearby = false; // Loading state for nearby events
-  let isLoggedIn = false;
+  const storage = getStorage();
 
-  // Reactive auth state
-  $: ({ isLoading, isLoggedIn } = $authState);
-
-  // Events data
-  let events = [];
-  let filteredEvents = [];
-  let searchTerm = '';
-  let selectedCategory = '';
-  let userLocation = '';
-  const maxDistance = 50000; // 50 km
-
-  // Event creation form data
   let newEvent = {
     title: '',
-    description: '',
-    category: '',
-    date: '',
     location: '',
+    description: '',
+    date: '',
+    imageFile: null,
+    imageUrl: '',
     lat: null,
     lng: null,
-    imageUrl: '',
   };
 
-  // Load all events
-  onMount(async () => {
-    try {
-      const eventsRef = ref(db, 'events');
-      const snapshot = await get(eventsRef);
-      if (snapshot.exists()) {
-        events = Object.values(snapshot.val());
-        filteredEvents = events;
-      }
-      loadGoogleMapsAutocomplete('location-input', onLocationSelected);
-    } catch (error) {
-      console.error('Error fetching events:', error);
-    } finally {
-      isLoading = false;
-    }
-  });
-
-  // Handle Google Maps Autocomplete selection
-  function onLocationSelected(place) {
-    newEvent.location = place.formatted_address;
-    newEvent.lat = place.geometry.location.lat();
-    newEvent.lng = place.geometry.location.lng();
+  function handleFileInput(event) {
+    newEvent.imageFile = event.target.files[0];
   }
 
-  // Create a new event
-  async function createEvent() {
-    if (!newEvent.title || !newEvent.location || !newEvent.category || !newEvent.date) {
-      alert('Please fill in all required fields.');
-      return;
-    }
-
+  async function uploadImage(file) {
+    if (!file) return null;
     try {
-      const eventsRef = ref(db, 'events');
-      await push(eventsRef, newEvent);
-      alert('Event created successfully!');
-      location.reload();
+      const fileRef = storageRef(storage, `events/${file.name}`);
+      await uploadBytes(fileRef, file);
+      const downloadUrl = await getDownloadURL(fileRef);
+      return downloadUrl;
     } catch (error) {
-      console.error('Error creating event:', error);
-      alert('Failed to create event. Please try again.');
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image.');
+      throw error;
     }
   }
 
-  // Find nearby events
-  async function findNearbyEvents() {
-    if (!userLocation) {
-      alert('Please enter a location.');
-      return;
-    }
-
-    isFindingNearby = true;
+  async function createEvent(event) {
+    event.preventDefault();
     try {
-      const userLatLng = await geocodeLocation(userLocation);
-      if (!userLatLng) {
-        alert('Unable to determine location.');
+      // Validate required fields
+      if (!newEvent.title || !newEvent.location || !newEvent.date || !newEvent.description) {
+        alert("All fields are required.");
         return;
       }
 
-      filteredEvents = events.filter(event => {
-        if (event.lat && event.lng) {
-          const distance = calculateDistance(userLatLng, { lat: event.lat, lng: event.lng });
-          return distance <= maxDistance;
-        }
-        return false;
-      });
-
-      if (filteredEvents.length === 0) {
-        alert('No nearby events found.');
+      // Geocode the location
+      const userLatLng = await geocodeLocation(newEvent.location);
+      if (!userLatLng) {
+        alert("Invalid location. Please try again.");
+        return;
       }
+
+      // Upload image to Firebase Storage
+      const imageUrl = await uploadImage(newEvent.imageFile);
+
+      // Set latitude, longitude, and image URL in the event data
+      newEvent.lat = userLatLng.lat;
+      newEvent.lng = userLatLng.lng;
+      newEvent.imageUrl = imageUrl;
+
+      // Save event data to Firebase Realtime Database
+      const eventsRef = ref(getDatabase(), 'events');
+      await push(eventsRef, { ...newEvent, createdAt: new Date() });
+
+      alert("Event created successfully!");
+      resetForm();
     } catch (error) {
-      console.error('Error finding nearby events:', error);
-      alert('Failed to find events. Please try again.');
-    } finally {
-      isFindingNearby = false;
+      console.error("Error creating event:", error);
+      alert("Failed to create event.");
     }
   }
 
-  // Navigation helpers
-  function handleLoginRedirect() {
-    goto('/login');
+  function resetForm() {
+    newEvent = {
+      title: '',
+      location: '',
+      description: '',
+      date: '',
+      imageFile: null,
+      imageUrl: '',
+      lat: null,
+      lng: null,
+    };
   }
 
-  function handleRegisterRedirect() {
-    goto('/register');
-  }
+  onMount(() => {
+    loadGoogleMapsAutocomplete('location-input', place => {
+      newEvent.location = place.formatted_address;
+    });
+  });
 </script>
 
-{#if isLoading}
-  <p>Loading events...</p>
-{:else if isLoggedIn}
-  <!-- Event Creation Form -->
-  <section class="event-form">
-    <h2>Create a New Event</h2>
-    <input type="text" placeholder="Event Title" bind:value={newEvent.title} required />
-    <textarea placeholder="Description" bind:value={newEvent.description} required></textarea>
-    <select bind:value={newEvent.category} required>
-      <option value="" disabled selected>Select Category</option>
-      <option value="book">Book Event</option>
-      <option value="coffee">Coffee Event</option>
-      <option value="mixed">Mixed Event</option>
-    </select>
-    <input type="date" bind:value={newEvent.date} required />
-    <input
-      id="location-input"
-      type="text"
-      placeholder="Enter City or ZIP Code"
-      bind:value={newEvent.location}
-      required
-    />
-    <button on:click={createEvent}>Create Event</button>
-  </section>
-
-  <!-- Search, Filter, and Nearby Events -->
-  <section class="events">
-    <div class="filters">
-      <input type="text" placeholder="Search..." bind:value={searchTerm} />
-      <select bind:value={selectedCategory}>
-        <option value="">All Categories</option>
-        <option value="book">Book Events</option>
-        <option value="coffee">Coffee Events</option>
-      </select>
-      <input
-        type="text"
-        placeholder="Enter your location"
-        bind:value={userLocation}
-      />
-      <button on:click={findNearbyEvents} disabled={isFindingNearby}>
-        {isFindingNearby ? 'Finding...' : 'Find Nearby Events'}
-      </button>
+<!-- Event Creation Form -->
+<div class="container my-5">
+  <div class="card mx-auto form-container bg-light text-dark" style="max-width: 600px;">
+    <div class="card-body">
+      <h2 class="card-title text-center mb-4">Create an Event</h2>
+      <form on:submit|preventDefault={createEvent}>
+        <div class="mb-3">
+          <label for="title" class="form-label">Event Title:</label>
+          <input
+            type="text"
+            id="title"
+            class="form-control"
+            placeholder="Enter the event title"
+            bind:value={newEvent.title}
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="location-input" class="form-label">Location (City/ZIP):</label>
+          <input
+            type="text"
+            id="location-input"
+            class="form-control"
+            placeholder="Enter city or ZIP code"
+            bind:value={newEvent.location}
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="description" class="form-label">Description:</label>
+          <textarea
+            id="description"
+            class="form-control"
+            rows="3"
+            placeholder="Enter event description"
+            bind:value={newEvent.description}
+            required
+          ></textarea>
+        </div>
+        <div class="mb-3">
+          <label for="date" class="form-label">Event Date:</label>
+          <input
+            type="date"
+            id="date"
+            class="form-control"
+            bind:value={newEvent.date}
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="image" class="form-label">Upload Event Image:</label>
+          <input
+            type="file"
+            id="image"
+            class="form-control"
+            accept="image/*"
+            on:change={handleFileInput}
+          />
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Create Event</button>
+      </form>
     </div>
-
-    <!-- Events Grid -->
-    {#if filteredEvents.length > 0}
-      <div class="events-grid">
-        {#each filteredEvents as event}
-          <div class="event-card">
-            <h3>{event.title || 'Untitled Event'}</h3>
-            <p>{event.description || 'No description available.'}</p>
-            <p><strong>Category:</strong> {event.category || 'N/A'}</p>
-            <p><strong>Location:</strong> {event.location}</p>
-            <p><strong>Date:</strong> {event.date}</p>
-          </div>
-        {/each}
-      </div>
-    {:else}
-      <p>No events match your search or location filter.</p>
-    {/if}
-  </section>
-{:else}
-  <div>
-    <h2>You must log in to view and create events.</h2>
-    <button on:click={handleLoginRedirect}>Log In</button>
-    <button on:click={handleRegisterRedirect}>Register</button>
   </div>
-{/if}
-
-<style>
-  /* Same CSS as before with form added */
-  .event-form {
-    margin-bottom: 2rem;
-    padding: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background: #f9f9f9;
-  }
-
-  .filters, .event-form input, .event-form textarea, .event-form select, .event-form button {
-    margin-bottom: 1rem;
-  }
-
-  .events-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-  }
-
-  .event-card {
-    border: 1px solid #ddd;
-    padding: 1rem;
-    border-radius: 5px;
-    background-color: white;
-  }
-</style>
+</div>
