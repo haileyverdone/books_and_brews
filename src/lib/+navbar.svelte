@@ -164,6 +164,10 @@
   .navbar-toggler {
     margin-left: auto;
   }
+  .nav-link.active {
+  background-color: transparent; /* Prevent any unwanted background color */
+  color: pink; /* Match hover color or any preferred active color */
+}
   @media (max-width: 992px) {
   .navbar-collapse {
     justify-content: center;
