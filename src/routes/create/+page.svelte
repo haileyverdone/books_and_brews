@@ -19,20 +19,28 @@
   $: ({ isLoading, isLoggedIn, uid, userProfile } = $authState);
 
   function handleFileInput(event) {
-    imageFile = event.target.files[0];
+  const file = event.target.files[0]; // Get the selected or captured file
+  if (file) {
+    imageFile = file; // Save the file for uploading
+    console.log("Selected or captured image:", file);
+  } else {
+    console.error("No file selected or captured.");
   }
+}
 
-  async function uploadImage(imageFile, uid) {
-    if (!imageFile) return null;
-    try {
-      const storageRef = ref(storage, `posts/${uid}/${imageFile.name}`);
-      await uploadBytes(storageRef, imageFile);
-      return await getDownloadURL(storageRef);
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      throw new Error('Failed to upload image.');
+
+    async function uploadImage(imageFile, uid) {
+      if (!imageFile) return null;
+      try {
+        const storageRef = ref(storage, `posts/${uid}/${imageFile.name}`);
+        await uploadBytes(storageRef, imageFile);
+        return await getDownloadURL(storageRef);
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        throw new Error("Failed to upload image.");
+      }
     }
-  }
+
 
   let debounceTimeout;
   async function fetchBookSuggestions(query) {
@@ -224,19 +232,18 @@
               placeholder="Write about your experience"
             ></textarea>
           </div>
-
-          <!-- Image Upload -->
+<!-- Image Upload -->
           <div class="mb-3">
-            <label for="image" class="form-label">Upload Photo:</label>
+            <label for="image" class="form-label">Upload Photo (Camera or File):</label>
             <input
               type="file"
               id="image"
               class="form-control"
               accept="image/*"
+              capture="environment"
               on:change={handleFileInput}
             />
           </div>
-
           <!-- Submit Button -->
           <button type="submit" class="btn btn-info w-100">Create Post</button>
         </form>
