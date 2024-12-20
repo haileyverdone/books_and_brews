@@ -136,13 +136,13 @@
               {#if selectedPost.userId === $authState.uid}
                 <div class="mt-3">
                   <button
-                    class="btn btn-warning me-2"
+                    class="btn btn-edit"
                     on:click={() => alert('Edit functionality coming soon!')}
                   >
                     Edit
                   </button>
                   <button
-                    class="btn btn-danger"
+                    class="btn btn-delete"
                     on:click={() => deletePost(selectedPost.id)}
                   >
                     Delete
@@ -189,4 +189,32 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Edit Button Styling */
+.btn-edit {
+  background-color: grey;
+  border-color: black;
+  color: #fff;
+  font-weight: bold;
+  border-radius: 8px;
+}
+
+.btn-edit:hover {
+  background-color: pink;
+  border-color: white;
+}
+
+/* Delete Button Styling */
+.btn-delete {
+  background-color: #dc3545; /* Red background */
+  border-color: #dc3545;
+  color: #fff;
+  font-weight: bold;
+  border-radius: 8px;
+}
+
+.btn-delete:hover {
+  background-color: #c82333; /* Darker red on hover */
+  border-color: #c82333;
+}
+
 </style>

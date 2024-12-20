@@ -645,5 +645,17 @@
     max-width: 90%;
   }
 }
+
+.btn-primary {
+  background-color: black !important; 
+  border-color: white !important;
+  color: #fff !important; 
+}
+
+.btn-primary:hover {
+  background-color: grey !important; 
+  border-color: white !important;
+}
+
 </style>
 

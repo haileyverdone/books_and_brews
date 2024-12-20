@@ -310,4 +310,15 @@ let debounceTimeout;
     border: 2px solid #ddd;
     border-radius: 8px;
   }
+  .btn-info {
+  background-color: black !important; 
+  border-color: white !important;
+  color: #fff !important; 
+}
+
+.btn-info:hover {
+  background-color: grey !important; 
+  border-color: white !important;
+}
+
 </style>
