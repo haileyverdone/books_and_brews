@@ -1,8 +1,9 @@
 <script>
-  import { onMount } from 'svelte';
-  import { getDatabase, ref, onValue, push } from 'firebase/database';
-  import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-  import { db, storage } from '$lib/firebaseConfig';
+  import { onMount } from "svelte";
+  import { authState } from "$lib/stores"; // Assuming your authState is managed here
+  import { getFirestore, collection, addDoc, getDocs } from "firebase/firestore";
+  import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+  import { db, storage } from "$lib/firebaseConfig";
 
   let activeTab = 'view'; // 'view' for viewing events, 'create' for creating events
   let events = [];
@@ -20,19 +21,27 @@
     type: '',
   };
 
+  $: ({ isLoading, isLoggedIn, uid, userProfile } = $authState);
+
   let locationSuggestions = [];
   let autocompleteService;
   let selectedLocation = null;
+  let selectedFilter = "";
 
-  // Fetch events from Firebase Realtime Database
-  function fetchEvents() {
-    const eventsRef = ref(getDatabase(), 'events');
-    onValue(eventsRef, (snapshot) => {
-      events = [];
-      snapshot.forEach((childSnapshot) => {
-        events.push(childSnapshot.val());
-      });
-    });
+
+  $: filteredEvents = selectedFilter
+  ? events.filter((event) => event.type === selectedFilter)
+  : events;
+
+ async function fetchEvents() {
+    try {
+      const eventsCollection = collection(db, "events");
+      const snapshot = await getDocs(eventsCollection);
+      events = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      console.log("Fetched events:", events); // Debugging
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
   }
 
   function handleFileInput(event) {
@@ -53,25 +62,45 @@
   }
 
   async function createEvent(event) {
-    event.preventDefault();
-    try {
-      if (!newEvent.title || !newEvent.location || !newEvent.date || !newEvent.description || !newEvent.type) {
-        alert('All fields are required.');
-        return;
-      }
+  event.preventDefault();
 
-      const imageUrl = await uploadImage(newEvent.imageFile);
-      const eventsRef = ref(getDatabase(), 'events');
-      await push(eventsRef, { ...newEvent, imageUrl, createdAt: new Date() });
-
-      alert('Event created successfully!');
-      resetForm();
-      showModal = false; // Close the modal
-    } catch (error) {
-      console.error('Error creating event:', error);
-      alert('Failed to create event.');
+  try {
+    if (!isLoggedIn) {
+      alert("You must be logged in to create an event.");
+      return;
     }
+
+    if (!newEvent.title || !newEvent.location || !newEvent.date || !newEvent.description || !newEvent.type) {
+      alert("All fields are required.");
+      return;
+    }
+
+    // Upload image to Firebase Storage
+    const imageUrl = await uploadImage(newEvent.imageFile);
+
+    // Create a new event without the `imageFile`
+    const { imageFile, ...eventData } = newEvent;
+
+    // Save the event to Firestore
+    const eventsCollection = collection(db, "events");
+    await addDoc(eventsCollection, {
+      ...eventData,
+      imageUrl,
+      createdAt: new Date().toISOString(),
+      userId: uid, // Include the user ID for tracking
+    });
+
+    alert("Event created successfully!");
+    resetForm();
+    showModal = false; // Close the modal
+    fetchEvents(); // Refresh the events list
+  } catch (error) {
+    console.error("Error creating event:", error);
+    alert("Failed to create event. Please try again.");
   }
+}
+
+
 
   function resetForm() {
     newEvent = {
@@ -155,6 +184,7 @@
         View Events
       </button>
     </li>
+    {#if isLoggedIn}
     <li class="nav-item">
       <button
         class="nav-link {activeTab === 'create' ? 'active' : ''}"
@@ -163,27 +193,59 @@
         Create Event
       </button>
     </li>
-  </ul>
+  {:else}
+    <li class="nav-item">
+      <button
+        class="nav-link"
+        on:click={() => alert("Please log in to create an event.")}
+      >
+        Create Event (Login Required)
+      </button>
+    </li>
+  {/if}
+</ul>
 
-  <!-- Events List -->
-  {#if activeTab === 'view'}
-    <div class="mt-4">
-      <h2>All Events</h2>
-      {#each events as event}
-        <div class="card mb-3">
-          <div class="card-body">
-            <h5 class="card-title">{event.title}</h5>
-            <p class="card-text">{event.description}</p>
-            <p><strong>Location:</strong> {event.location}</p>
-            <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
+<!-- Events List -->
+{#if activeTab === 'view'}
+  <div class="mt-4">
+    <h2>All Events</h2>
+
+    <!-- Filter Dropdown -->
+    <div class="mb-3">
+      <label for="filterType" class="form-label">Filter by Type:</label>
+      <select
+        id="filterType"
+        class="form-select"
+        bind:value={selectedFilter}
+      >
+        <option value="">All</option>
+        <option value="book">Book</option>
+        <option value="coffee">Coffee</option>
+        <option value="both">Both</option>
+      </select>
+    </div>
+
+    <!-- Events Grid -->
+    <div class="row g-3">
+      {#each filteredEvents as event (event.id)}
+        <div class="col-md-4">
+          <div class="card h-100">
             {#if event.imageUrl}
-              <img src={event.imageUrl} alt={event.title} class="img-fluid mt-2" />
+              <img src={event.imageUrl} alt={event.title} class="card-img-top" />
             {/if}
+            <div class="card-body">
+              <h5 class="card-title">{event.title}</h5>
+              <p class="card-text text-muted">{event.description}</p>
+              <p><strong>Type:</strong> {event.type}</p>
+              <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
+              <p><strong>Location:</strong> {event.location}</p>
+            </div>
           </div>
         </div>
       {/each}
     </div>
-  {/if}
+  </div>
+{/if}
 
   <!-- Create Event Modal -->
   {#if showModal}
@@ -291,6 +353,30 @@
     border-radius: 12px;
     overflow: hidden;
   }
+
+  .row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: -0.75rem;
+  margin-right: -0.75rem;
+}
+
+.col-md-4 {
+  flex: 0 0 33.333%;
+  max-width: 33.333%;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.card {
+  height: 100%;
+}
+
+.card-img-top {
+  height: 150px; /* Adjust as needed */
+  object-fit: cover;
+}
+
 
 
 </style>
