@@ -11,6 +11,8 @@
 
   let isMobile = false;
   let imagePreview = null;
+  let detailedEvent = null; 
+  let showDetailModal = false;
 
   let newEvent = {
     title: '',
@@ -45,16 +47,20 @@
     fetchEvents();
   });
 
- async function fetchEvents() {
-    try {
-      const eventsCollection = collection(db, "events");
-      const snapshot = await getDocs(eventsCollection);
-      events = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      console.log("Fetched events:", events); 
-    } catch (error) {
-      console.error("Error fetching events:", error);
-    }
+  async function fetchEvents() {
+  try {
+    const eventsCollection = collection(db, "events");
+    const snapshot = await getDocs(eventsCollection);
+    events = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      console.log(`Fetched event: ${doc.id}`, data); // Debugging
+      return { id: doc.id, ...data };
+    });
+  } catch (error) {
+    console.error("Error fetching events:", error);
   }
+}
+
 
   function handleFileInput(event) {
     const file = event.target.files[0];
@@ -76,6 +82,31 @@
       throw new Error("Image upload failed.");
     }
   }
+
+      function toggleFavorite(eventId) {
+      // Find the event by ID and toggle its favorite status
+      const eventIndex = events.findIndex((event) => event.id === eventId);
+      if (eventIndex > -1) {
+        events[eventIndex].isFavorite = !events[eventIndex].isFavorite;
+
+        // Save the updated event to Firestore
+        const eventDocRef = doc(db, "events", eventId);
+        updateDoc(eventDocRef, { isFavorite: events[eventIndex].isFavorite })
+          .then(() => console.log(`Event ${eventId} favorite status updated.`))
+          .catch((error) => console.error("Error updating favorite status:", error));
+      }
+    }
+
+    function openDetailModal(eventId) {
+      // Find the event by ID and set it as the detailedEvent
+      detailedEvent = events.find((event) => event.id === eventId);
+      showDetailModal = true;
+    }
+
+    function closeDetailModal() {
+      detailedEvent = null;
+      showDetailModal = false;
+    }
 
   async function createEvent(event) {
   event.preventDefault();
@@ -220,6 +251,7 @@
     </li>
   {/if}
 </ul>
+</div>
 
 <!-- Events List -->
 {#if activeTab === 'view'}
@@ -246,11 +278,34 @@
       {#each filteredEvents as event (event.id)}
         <div class="col-md-4">
           <div class="card h-100">
-            {#if event.imageUrl}
-              <img src={event.imageUrl} alt={event.title} class="card-img-top" />
-            {/if}
+            <!-- Event Image -->
+            <button
+            class="image-button"
+            on:click={() => openDetailModal(event.id)}
+            on:keydown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') openDetailModal(event.id);
+            }}
+            aria-label={`View details of ${event.title}`}
+          >
+            <img
+              src={event.imageUrl || '/placeholder.jpeg'}
+              alt={event.title || 'Event Image'}
+              class="card-img-top"
+              onerror="this.onerror=null;this.src='/placeholder.jpeg';"
+            />
+          </button>                  
+            <!-- Event Card Body -->
             <div class="card-body">
-              <h5 class="card-title">{event.title}</h5>
+              <div class="card-title-container">
+                <h5 class="card-title">{event.title}</h5>
+                <button
+                  class="favorite-btn"
+                  on:click={() => toggleFavorite(event.id)}
+                  title="Favorite"
+                >
+                  {event.isFavorite ? "★" : "☆"} 
+                </button>
+              </div>
               <p class="card-text text-muted">{event.description}</p>
               <p><strong>Type:</strong> {event.type}</p>
               <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
@@ -261,40 +316,106 @@
       {/each}
     </div>
   </div>
-{/if}
 
-  <!-- Create Event Modal -->
-  {#if showModal}
-    <div class="modal show d-block" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Create an Event</h5>
-            <button type="button" class="btn-close" on:click={() => (showModal = false)}></button>
+  {#if showDetailModal}
+  <div class="detail-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>{detailedEvent.title || "Event Details"}</h2>
+        <!-- Single close button -->
+        <button class="btn-close" on:click={closeDetailModal} aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {#if detailedEvent}
+        <img
+          src={detailedEvent.imageUrl || "/placeholder.jpeg"}
+          alt={detailedEvent.title || "Event Image"}
+          class="modal-img"
+          onerror="this.onerror=null;this.src='/placeholder.jpeg';"
+        />
+        <form>
+          <div class="mb-3">
+            <label for="eventTitle" class="form-label">Title</label>
+            <input
+              id="eventTitle"
+              class="form-control"
+              type="text"
+              value={detailedEvent.title}
+              readonly
+            />
           </div>
-          <div class="modal-body">
-            <form on:submit|preventDefault={createEvent}>
-              <div class="mb-3">
-                <label for="title" class="form-label">Event Title:</label>
-                <input
-                  type="text"
-                  id="title"
-                  class="form-control"
-                  bind:value={newEvent.title}
-                  required
-                />
-              </div>
-              <div class="mb-3 position-relative">
-                <label for="location" class="form-label">Location:</label>
-                <input
-                  type="text"
-                  id="location"
-                  class="form-control"
-                  bind:value={newEvent.location}
-                  on:input={handleLocationInput}
-                  required
-                />
-                {#if locationSuggestions.length}
+          <div class="mb-3">
+            <label for="eventDescription" class="form-label">Description</label>
+            <textarea
+              id="eventDescription"
+              class="form-control"
+              rows="3"
+              readonly
+            >{detailedEvent.description}</textarea>
+          </div>
+          <div class="mb-3">
+            <label for="eventDate" class="form-label">Date</label>
+            <input
+              id="eventDate"
+              class="form-control"
+              type="date"
+              value={detailedEvent.date}
+              readonly
+            />
+          </div>
+          <div class="mb-3">
+            <label for="eventLocation" class="form-label">Location</label>
+            <input
+              id="eventLocation"
+              class="form-control"
+              type="text"
+              value={detailedEvent.location}
+              readonly
+            />
+          </div>
+        </form>
+        {/if}
+      </div>
+    </div>
+  </div>
+  {/if}
+  
+  
+
+{/if} 
+
+<!-- Create Event Modal -->
+{#if showModal}
+  <div class="modal show d-block" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Create an Event</h5>
+          <button type="button" class="btn-close" on:click={() => (showModal = false)}></button>
+        </div>
+        <div class="modal-body">
+          <form on:submit|preventDefault={createEvent}>
+            <div class="mb-3">
+              <label for="title" class="form-label">Event Title:</label>
+              <input
+                type="text"
+                id="title"
+                class="form-control"
+                bind:value={newEvent.title}
+                required
+              />
+            </div>
+            <div class="mb-3 position-relative">
+              <label for="location" class="form-label">Location:</label>
+              <input
+                type="text"
+                id="location"
+                class="form-control"
+                bind:value={newEvent.location}
+                on:input={handleLocationInput}
+                required
+              />
+              {#if locationSuggestions.length}
                 <ul class="list-group position-absolute w-100" style="z-index: 1050;">
                   {#each locationSuggestions as suggestion}
                     <li class="list-group-item">
@@ -311,114 +432,190 @@
                     </li>
                   {/each}
                 </ul>
-                
-                {/if}
-              </div>
-              <div class="mb-3">
-                <label for="description" class="form-label">Description:</label>
-                <textarea
-                  id="description"
-                  class="form-control"
-                  rows="3"
-                  bind:value={newEvent.description}
-                  required
-                ></textarea>
-              </div>
-              <div class="mb-3">
-                <label for="date" class="form-label">Date:</label>
-                <input
-                  type="date"
-                  id="date"
-                  class="form-control"
-                  bind:value={newEvent.date}
-                  required
-                />
-              </div>
-              <div class="mb-3">
-                <label for="image" class="form-label">Upload Image:</label>
-                {#if isMobile}
-                  <div>
-                    <input
-                      type="file"
-                      id="image"
-                      class="form-control"
-                      accept="image/*"
-                      capture="environment"
-                      on:change={handleFileInput}
-                    />
-                  </div>
-                {:else}
-                  <div>
-                    <input
-                      type="file"
-                      id="image"
-                      class="form-control"
-                      accept="image/*"
-                      on:change={handleFileInput}
-                    />
-                  </div>
-                {/if}
-                {#if imagePreview}
-                  <div class="mt-3">
-                    <img src={imagePreview} alt="" class="img-thumbnail" />
-                  </div>
-                {/if}
-              </div>              
-              <div class="mb-3">
-                <label for="type" class="form-label">Event Type:</label>
-                <select id="type" class="form-control" bind:value={newEvent.type} required>
-                  <option value="" disabled>Select type</option>
-                  <option value="book">Book</option>
-                  <option value="coffee">Coffee</option>
-                  <option value="both">Both</option>
-                </select>
-              </div>
-              <button type="submit" class="btn btn-primary w-100">Create Event</button>
-            </form>
-          </div>
+              {/if}
+            </div>
+            <div class="mb-3">
+              <label for="description" class="form-label">Description:</label>
+              <textarea
+                id="description"
+                class="form-control"
+                rows="3"
+                bind:value={newEvent.description}
+                required
+              ></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="date" class="form-label">Date:</label>
+              <input
+                type="date"
+                id="date"
+                class="form-control"
+                bind:value={newEvent.date}
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label for="image" class="form-label">Upload Image:</label>
+              {#if isMobile}
+                <div>
+                  <input
+                    type="file"
+                    id="image"
+                    class="form-control"
+                    accept="image/*"
+                    capture="environment"
+                    on:change={handleFileInput}
+                  />
+                </div>
+              {:else}
+                <div>
+                  <input
+                    type="file"
+                    id="image"
+                    class="form-control"
+                    accept="image/*"
+                    on:change={handleFileInput}
+                  />
+                </div>
+              {/if}
+              {#if imagePreview}
+                <div class="mt-3">
+                  <img src={imagePreview} alt="" class="img-thumbnail" />
+                </div>
+              {/if}
+            </div>
+            <div class="mb-3">
+              <label for="type" class="form-label">Event Type:</label>
+              <select id="type" class="form-control" bind:value={newEvent.type} required>
+                <option value="" disabled>Select type</option>
+                <option value="book">Book</option>
+                <option value="coffee">Coffee</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Create Event</button>
+          </form>
         </div>
       </div>
     </div>
-  {/if}
-</div>
+  </div>
+
+{/if} 
+
 
 <style>
   .modal {
     background-color: rgba(0, 0, 0, 0.5);
   }
+
   .modal-content {
     border-radius: 12px;
     overflow: hidden;
   }
 
   .row {
-  display: flex;
-  flex-wrap: wrap;
-  margin-left: -0.75rem;
-  margin-right: -0.75rem;
-}
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+  }
 
-.col-md-4 {
-  flex: 0 0 33.333%;
-  max-width: 33.333%;
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
-}
+  .col-md-4 {
+    flex: 0 0 33.333%;
+    max-width: 33.333%;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
 
-.card {
-  height: 100%;
-}
+  .card {
+    max-width: 300px; 
+    margin: auto; 
+    height: auto; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+    border-radius: 12px; 
+    overflow: hidden; 
+    transition: transform 0.2s ease, box-shadow 0.2s ease; 
+  }
 
-.card-img-top {
-  height: 150px; 
-  object-fit: cover;
-}
-.img-thumbnail {
-  max-width: 100%;
-  height: auto;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-}
+  .card:hover {
+    transform: scale(1.05); 
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); 
+  }
 
+  .card-img-top {
+    height: 150px; 
+    object-fit: cover; 
+    border-radius: 12px 12px 0 0; 
+  }
+
+  .detail-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    z-index: 1050;
+    width: 90%;
+    max-width: 400px; 
+    padding: 20px; 
+  }
+
+  .detail-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px; 
+  }
+
+  .detail-modal .btn-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  .detail-modal img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 15px;
+  }
+
+  .detail-modal h2 {
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+  }
+
+  .img-thumbnail {
+    max-width: 100%;
+    height: auto;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+  }
+
+  .form-label {
+    font-weight: bold;
+  }
+
+  .form-control {
+    font-size: 0.9rem;
+    padding: 8px;
+  }
+
+  .image-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    outline: none;
+  }
+
+  .image-button img {
+    border-radius: 8px; 
+  }
 
 </style>
