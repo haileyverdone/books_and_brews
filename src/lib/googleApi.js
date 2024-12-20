@@ -1,15 +1,12 @@
 export async function loadGoogleMaps() {
-    // Ensure this only runs on the client side
     if (typeof window === 'undefined') return null;
   
-    // Dynamically import @googlemaps/js-api-loader to avoid SSR errors
     const googleMapsLoader = await import('@googlemaps/js-api-loader');
     const { Loader } = googleMapsLoader;
   
-    // Load the Google Maps API with the API key from your .env file
     const loader = new Loader({
-      apiKey: import.meta.env.VITE_GOOGLE_API_KEY, // Use Vite env variable
-      libraries: ['geometry', 'places'], // Required libraries
+      apiKey: import.meta.env.VITE_GOOGLE_API_KEY, 
+      libraries: ['geometry', 'places'], 
     });
   
     return await loader.load();

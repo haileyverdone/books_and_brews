@@ -28,7 +28,6 @@
     isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
       userAgent.toLowerCase()
     );
-    console.log("Is Mobile:", isMobile); 
   });
   
 
@@ -37,7 +36,6 @@
   if (file) {
     imageFile = file; // Save the file for uploading
     imagePreview = URL.createObjectURL(file);
-    console.log("Selected or captured image:", file);
   } else {
     console.error("No file selected or captured.");
   }

@@ -43,7 +43,6 @@
     isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
       userAgent.toLowerCase()
     );
-    console.log("Is Mobile:", isMobile); 
     fetchEvents();
   });
 
@@ -53,7 +52,6 @@
     const snapshot = await getDocs(eventsCollection);
     events = snapshot.docs.map((doc) => {
       const data = doc.data();
-      console.log(`Fetched event: ${doc.id}`, data); // Debugging
       return { id: doc.id, ...data };
     });
   } catch (error) {
@@ -67,7 +65,6 @@
     if (file) {
       newEvent.imageFile = file;
       imagePreview = URL.createObjectURL(file);
-      console.log("Selected File:", file); 
     }
   }
 
@@ -84,21 +81,20 @@
   }
 
       function toggleFavorite(eventId) {
-      // Find the event by ID and toggle its favorite status
+      // favorite
       const eventIndex = events.findIndex((event) => event.id === eventId);
       if (eventIndex > -1) {
         events[eventIndex].isFavorite = !events[eventIndex].isFavorite;
 
-        // Save the updated event to Firestore
+        //save event to firestore
         const eventDocRef = doc(db, "events", eventId);
         updateDoc(eventDocRef, { isFavorite: events[eventIndex].isFavorite })
-          .then(() => console.log(`Event ${eventId} favorite status updated.`))
           .catch((error) => console.error("Error updating favorite status:", error));
       }
     }
 
     function openDetailModal(eventId) {
-      // Find the event by ID and set it as the detailedEvent
+      // detailed event
       detailedEvent = events.find((event) => event.id === eventId);
       showDetailModal = true;
     }
@@ -192,7 +188,6 @@
   }
 
   async function selectLocation(suggestion) {
-  console.log('Selected Suggestion:', suggestion);
   const geocoder = new google.maps.Geocoder();
   try {
     const response = await geocoder.geocode({ placeId: suggestion.placeId });
@@ -206,7 +201,6 @@
       };
       newEvent.location = suggestion.description;
       locationSuggestions = [];
-      console.log('Location selected:', newEvent.location);
     }
   } catch (error) {
     console.error('Error selecting location:', error);
@@ -323,7 +317,7 @@
       <div class="modal-header">
         <h2>{detailedEvent.title || "Event Details"}</h2>
         <!-- Single close button -->
-        <button class="btn-close" on:click={closeDetailModal} aria-label="Close"></button>
+        <button class="btn-close" on:click={closeDetailModal} aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
         {#if detailedEvent}
@@ -391,10 +385,17 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Create an Event</h5>
-          <button type="button" class="btn-close" on:click={() => (showModal = false)}></button>
+          <!-- Ensure only one close button -->
+          <button
+            type="button"
+            class="btn-close"
+            on:click={() => (showModal = false)}
+            aria-label="Close"
+          ></button>
         </div>
         <div class="modal-body">
           <form on:submit|preventDefault={createEvent}>
+            <!-- Form Fields -->
             <div class="mb-3">
               <label for="title" class="form-label">Event Title:</label>
               <input
@@ -456,28 +457,13 @@
             </div>
             <div class="mb-3">
               <label for="image" class="form-label">Upload Image:</label>
-              {#if isMobile}
-                <div>
-                  <input
-                    type="file"
-                    id="image"
-                    class="form-control"
-                    accept="image/*"
-                    capture="environment"
-                    on:change={handleFileInput}
-                  />
-                </div>
-              {:else}
-                <div>
-                  <input
-                    type="file"
-                    id="image"
-                    class="form-control"
-                    accept="image/*"
-                    on:change={handleFileInput}
-                  />
-                </div>
-              {/if}
+              <input
+                type="file"
+                id="image"
+                class="form-control"
+                accept="image/*"
+                on:change={handleFileInput}
+              />
               {#if imagePreview}
                 <div class="mt-3">
                   <img src={imagePreview} alt="" class="img-thumbnail" />
@@ -499,123 +485,165 @@
       </div>
     </div>
   </div>
-
-{/if} 
+{/if}
 
 
 <style>
-  .modal {
-    background-color: rgba(0, 0, 0, 0.5);
-  }
+.modal {
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0; 
+}
 
-  .modal-content {
-    border-radius: 12px;
-    overflow: hidden;
-  }
+.modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  padding: 20px;
+  max-width: 500px; 
+  width: 100%;
+  position: relative;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin: 0 auto;
+}
 
-  .row {
-    display: flex;
-    flex-wrap: wrap;
-    margin-left: -0.75rem;
-    margin-right: -0.75rem;
-  }
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem; 
+  justify-content: center; 
+  margin: 0;
+}
 
+.col-md-4 {
+  flex: 1 1 calc(33.333% - 1rem);
+  max-width: calc(33.333% - 1rem);
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
   .col-md-4 {
-    flex: 0 0 33.333%;
-    max-width: 33.333%;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    flex: 1 1 calc(50% - 1rem); 
+    max-width: calc(50% - 1rem);
   }
+}
 
-  .card {
-    max-width: 300px; 
-    margin: auto; 
-    height: auto; 
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
-    border-radius: 12px; 
-    overflow: hidden; 
-    transition: transform 0.2s ease, box-shadow 0.2s ease; 
+@media (max-width: 480px) {
+  .col-md-4 {
+    flex: 1 1 calc(100% - 1rem); 
+    max-width: calc(100% - 1rem);
   }
+}
 
-  .card:hover {
-    transform: scale(1.05); 
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); 
-  }
+.card {
+  max-width: 100%; 
+  margin: auto; 
+  height: auto; 
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+  border-radius: 12px; 
+  overflow: hidden; 
+  transition: transform 0.2s ease, box-shadow 0.2s ease; 
+}
 
-  .card-img-top {
-    height: 150px; 
-    object-fit: cover; 
-    border-radius: 12px 12px 0 0; 
-  }
+.card:hover {
+  transform: scale(1.05); 
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); 
+}
 
+.card-img-top {
+  height: 150px; 
+  object-fit: cover; 
+  border-radius: 12px 12px 0 0; 
+}
+
+.detail-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  z-index: 1050;
+  width: 90%;
+  max-width: 400px; 
+  max-height: 90vh; 
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto; 
+}
+
+.detail-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.detail-modal .btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: #000;
+  position: absolute;
+  top: 15px;
+  right: 15px;
+}
+
+.detail-modal img {
+  display: block;
+  max-width: 100%;
+  height: 200px; 
+  object-fit: contain; 
+  border-radius: 8px;
+  margin: 0 auto 15px;
+}
+
+.detail-modal h2 {
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.img-thumbnail {
+  max-width: 100%;
+  height: auto;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+}
+
+.form-label {
+  font-weight: bold;
+}
+
+.form-control {
+  font-size: 0.9rem;
+  padding: 8px;
+}
+
+.image-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  outline: none;
+}
+
+.image-button img {
+  border-radius: 8px; 
+}
+
+@media (max-width: 768px) {
   .detail-modal {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #fff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    border-radius: 12px;
-    z-index: 1050;
-    width: 90%;
-    max-width: 400px; 
-    padding: 20px; 
+    width: 95%; 
+    max-width: 90%;
   }
-
-  .detail-modal .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px; 
-  }
-
-  .detail-modal .btn-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-  }
-
-  .detail-modal img {
-    width: 100%;
-    height: auto;
-    border-radius: 8px;
-    margin-bottom: 15px;
-  }
-
-  .detail-modal h2 {
-    margin-bottom: 10px;
-    font-size: 1.5rem;
-  }
-
-  .img-thumbnail {
-    max-width: 100%;
-    height: auto;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-  }
-
-  .form-label {
-    font-weight: bold;
-  }
-
-  .form-control {
-    font-size: 0.9rem;
-    padding: 8px;
-  }
-
-  .image-button {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    display: block;
-    width: 100%;
-    outline: none;
-  }
-
-  .image-button img {
-    border-radius: 8px; 
-  }
-
+}
 </style>
+

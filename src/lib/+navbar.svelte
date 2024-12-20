@@ -34,8 +34,6 @@
   } else {
     activeTab = null; 
   }
-
-  console.log("Active Tab:", activeTab);
 }
 
   $: ({ isLoggedIn, isLoading, userEmail, uid, userProfile } = $authState);
@@ -43,7 +41,6 @@
   async function handleLogout() {
     try {
       await signOut(auth);
-      console.log('User logged out successfully');
       goto('/'); 
     } catch (error) {
       console.error('Error during logout:', error);
@@ -74,7 +71,6 @@
             <button
             class="nav-link {activeTab === tab.name ? 'active' : ''}"
             on:click={() => {
-              console.log("Tab clicked:", tab.name);
               goto(tab.href); 
               document.activeElement.blur();
             }}
@@ -165,8 +161,8 @@
     margin-left: auto;
   }
   .nav-link.active {
-  background-color: transparent; /* Prevent any unwanted background color */
-  color: pink; /* Match hover color or any preferred active color */
+  background-color: transparent; 
+  color: pink; 
 }
   @media (max-width: 992px) {
   .navbar-collapse {

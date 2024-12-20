@@ -20,7 +20,6 @@ export async function registerUser(email, password, name, username) {
       createdAt: serverTimestamp(),
     });
 
-    console.log('User registered and verification email sent.');
     return { success: true, user, message: 'Registration successful. Please check your email to verify your account.' };
   } catch (error) {
     console.error('Error registering user:', error);
@@ -41,14 +40,9 @@ export async function loginUser(email, password) {
     if (!response.ok) {
       throw new Error(data.error || 'Failed to log in.');
     }
-
-    console.log('Custom token received:', data.token);
-
     // Log in using the custom token
     await setPersistence(auth, browserSessionPersistence);
     const userCredential = await signInWithCustomToken(auth, data.token);
-
-    console.log('Logged in with custom token:', userCredential.user);
   
     return { success: true, user: userCredential.user };
   } catch (error) {
@@ -61,7 +55,6 @@ export async function loginUser(email, password) {
 export async function logoutUser() {
   try {
     await signOut(auth);
-    console.log('User logged out successfully');
     return { success: true };
   } catch (error) {
     console.error('Logout error:', error);
@@ -77,7 +70,6 @@ export async function fetchUserProfile(uid) {
     const userDoc = await getDoc(userDocRef);
 
     if (userDoc.exists()) {
-      console.log('User profile fetched:', userDoc.data());
       return userDoc.data();
     } else {
       console.warn('User profile not found:', uid);

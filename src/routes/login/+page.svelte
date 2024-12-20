@@ -14,7 +14,7 @@
   }
 
   async function handleLogin(event) {
-    event.preventDefault(); // Prevent the form from reloading the page
+    event.preventDefault(); 
     errorMessage = '';
     isLoading = true;
 

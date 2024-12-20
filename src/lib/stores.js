@@ -6,16 +6,14 @@ import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { getApp } from 'firebase/app';
 
 export const authState = writable({
-  isLoading: true,  // Initial loading state
+  isLoading: true, 
   isLoggedIn: false,
   userEmail: "",
   uid: "",
   userProfile: null,
 });
 
-// Ensure `updateAuthState` properly resets the loading state
 const updateAuthState = async (user) => {
-  console.log("updateAuthState called. User:", user);
   if (user) {
     try {
       const profile = await fetchUserProfile(user.uid);
@@ -26,7 +24,6 @@ const updateAuthState = async (user) => {
         uid: user.uid,
         userProfile: profile || null,
       });
-      console.log("Auth state updated with user profile:", profile);
     } catch (error) {
       console.error('Error updating auth state:', error);
       authState.set({
@@ -38,7 +35,6 @@ const updateAuthState = async (user) => {
       });
     }
   } else {
-    console.log("No user is logged in.")
     authState.set({
       isLoading: false,
       isLoggedIn: false,
@@ -50,7 +46,6 @@ const updateAuthState = async (user) => {
 };
 
 onAuthStateChanged(auth, (user) => {
-  console.log('Auth state changed:', user);
   updateAuthState(user);
 });
 
@@ -65,7 +60,6 @@ export const userStore = writable(null);
  * @param {string} userId - The ID of the user to watch.
  */
 export function watchUser(userId) {
-  console.log('watchUser called with userId:', userId);
 
   if (!userId) {
     console.error('User ID must be provided to watch the Firestore document.');
@@ -80,7 +74,6 @@ export function watchUser(userId) {
   const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
     if (docSnapshot.exists()) {
       const userData = { id: docSnapshot.id, ...docSnapshot.data() };
-      console.log('User document snapshot:', userData);
 
       // Update userStore
       userStore.set(userData);

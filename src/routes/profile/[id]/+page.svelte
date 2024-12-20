@@ -18,15 +18,12 @@
   let userActivity = [];
   let userPosts = [];
   let userEvents = [];
-
+  let favoritedEvents =[];
 
   $: if (isLoggedIn && uid) {
     watchUser(uid); // Start watching the user
     fetchUserActivity();
   }
-
-
-
 
   // Handle File Input
 async function handleFileInput(event) {
@@ -48,7 +45,6 @@ async function handleFileInput(event) {
       imagePreview = null;
       imageFile = null;
 
-      console.log("Profile photo updated successfully:", photoURL);
     } catch (error) {
       console.error("Error updating profile photo:", error);
       alert("Failed to update profile picture.");
@@ -66,10 +62,8 @@ async function handleFileInput(event) {
   try {
     const storage = getStorage();
     const fileRef = storageRef(storage, `profile-pictures/${uid}/${Date.now()}_${file.name}`);
-    console.log("Uploading image to:", fileRef.fullPath); // Debug log
     await uploadBytes(fileRef, file);
-    const downloadURL = await getDownloadURL(fileRef);
-    console.log("Image uploaded successfully. URL:", downloadURL); // Debug log
+    const downloadURL = await getDownloadURL(fileRef); 
     return downloadURL;
   } catch (error) {
     console.error("Error uploading image:", error.message);
@@ -98,7 +92,6 @@ async function handleFileInput(event) {
     imagePreview = null;
     imageFile = null;
 
-    console.log("Profile photo updated successfully:", photoURL);
     alert("Profile picture updated!");
   } catch (error) {
     console.error("Error updating profile photo:", error);
@@ -108,31 +101,38 @@ async function handleFileInput(event) {
 
 
 
-  async function fetchUserActivity() {
-    try {
-      const eventsCollection = collection(db, "events");
-      const postsCollection = collection(db, "posts");
+async function fetchUserActivity() {
+  try {
+    const eventsCollection = collection(db, "events");
+    const postsCollection = collection(db, "posts");
 
-      const [eventsSnapshot, postsSnapshot] = await Promise.all([
-        getDocs(eventsCollection),
-        getDocs(postsCollection),
-      ]);
+    const [eventsSnapshot, postsSnapshot] = await Promise.all([
+      getDocs(eventsCollection),
+      getDocs(postsCollection),
+    ]);
 
-      userEvents = eventsSnapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data(), type: "event" }))
-        .filter((event) => event.userId === uid);
+    userEvents = eventsSnapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data(), type: "event" }))
+      .filter((event) => event.userId === uid); // Events created by the user
 
-      userPosts = postsSnapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data(), type: "post" }))
-        .filter((post) => post.userId === uid);
+    const favoritedEvents = eventsSnapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .filter((event) => event.isFavorite && event.favoritedBy?.includes(uid)); // Favorited events
 
-      userActivity = [...userEvents, ...userPosts].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-    } catch (error) {
-      console.error("Error fetching user activity:", error);
-    }
+    userPosts = postsSnapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data(), type: "post" }))
+      .filter((post) => post.userId === uid);
+
+    userActivity = [...userEvents, ...userPosts].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    return { favoritedEvents }; // Return favorited events to use later
+  } catch (error) {
+    console.error("Error fetching user activity:", error);
   }
+}
+
 
 </script>
 
@@ -217,6 +217,30 @@ async function handleFileInput(event) {
       </div>
     </div>
   </div>
+  <!-- Favorited Events Section -->
+<div class="favorited-events mt-4">
+  <h3 class="favorited-events-header">My Favorited Events</h3>
+  <div class="event-grid">
+    {#if favoritedEvents.length > 0}
+      {#each favoritedEvents as event}
+        <div class="event-card">
+          <img
+            src={event.imageUrl || '/placeholder.jpeg'}
+            alt={event.title || 'Event Image'}
+            class="event-thumbnail"
+            onerror="this.onerror=null;this.src='/placeholder.jpeg';"
+          />
+          <h4 class="event-title">{event.title}</h4>
+          <p class="event-description">{event.description}</p>
+          <p><strong>Location:</strong> {event.location}</p>
+        </div>
+      {/each}
+    {:else}
+      <p>No favorited events found.</p>
+    {/if}
+  </div>
+</div>
+
 {:else}
   <p>No profile found.</p>
 {/if}
@@ -324,7 +348,7 @@ async function handleFileInput(event) {
   font-size: 1rem;
   font-weight: bold;
   color: #fff;
-  background-color: #007bff;
+  background-color: grey;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -332,13 +356,56 @@ async function handleFileInput(event) {
 }
 
 .btn:hover {
-  background-color: #0056b3;
+  background-color: pink;
 }
 
 .file-name {
   margin-top: 0.5rem;
   font-size: 0.9rem;
   color: #555;
+}
+.favorited-events {
+  margin-top: 2rem;
+}
+
+.favorited-events-header {
+  font-size: 1.5rem;
+  color: #444;
+  margin-bottom: 1rem;
+}
+
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.event-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.event-thumbnail {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.event-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.event-description {
+  font-size: 0.9rem;
+  color: #666;
 }
 
 </style>

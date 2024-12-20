@@ -14,10 +14,9 @@ try {
       credential: admin.credential.cert({
         projectId: adminCredentials.project_id,
         clientEmail: adminCredentials.client_email,
-        privateKey: adminCredentials.private_key.replace(/\\n/g, '\n'), // Handle newline characters
+        privateKey: adminCredentials.private_key.replace(/\\n/g, '\n'), 
       }),
     });
-    console.log('Firebase Admin initialized successfully');
   }
 } catch (error) {
   console.error('Error parsing FIREBASE_ADMIN_CREDENTIAL:', error.message);
