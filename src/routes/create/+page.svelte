@@ -18,6 +18,12 @@
 
   $: ({ isLoading, isLoggedIn, uid, userProfile } = $authState);
 
+  function isMobileDevice() {
+    return /Mobi|Android|iPhone|iPad|iPod/.test(navigator.userAgent);
+  }
+
+  let isMobile = isMobileDevice();
+
   function handleFileInput(event) {
   const file = event.target.files[0]; // Get the selected or captured file
   if (file) {
@@ -232,17 +238,17 @@
               placeholder="Write about your experience"
             ></textarea>
           </div>
-<!-- Image Upload -->
+          <!-- Image Upload -->
           <div class="mb-3">
             <label for="image" class="form-label">Upload Photo (Camera or File):</label>
             <input
-              type="file"
-              id="image"
-              class="form-control"
-              accept="image/*"
-              capture="environment"
-              on:change={handleFileInput}
-            />
+            type="file"
+            id="image"
+            class="form-control"
+            accept="image/*"
+            capture={isMobile ? "environment" : undefined}
+            on:change={handleFileInput}
+            />          
           </div>
           <!-- Submit Button -->
           <button type="submit" class="btn btn-info w-100">Create Post</button>
