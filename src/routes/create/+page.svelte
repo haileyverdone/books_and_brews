@@ -4,6 +4,7 @@
   import { db } from '$lib/firebaseConfig';
   import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
 
   const storage = getStorage();
 
@@ -11,6 +12,7 @@
   let coffeeShop = "";
   let description = "";
   let imageFile = null;
+  let imagePreview = null;
   let errorMessage = "";
   let suggestions = [];
   let showSuggestions = false;
@@ -18,22 +20,28 @@
 
   $: ({ isLoading, isLoggedIn, uid, userProfile } = $authState);
 
-  function isMobileDevice() {
-    return /Mobi|Android|iPhone|iPad|iPod/.test(navigator.userAgent);
-  }
 
-  let isMobile = isMobileDevice();
+
+  let isMobile = false;
+  onMount(() => {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+      userAgent.toLowerCase()
+    );
+    console.log("Is Mobile:", isMobile); 
+  });
+  
 
   function handleFileInput(event) {
   const file = event.target.files[0]; // Get the selected or captured file
   if (file) {
     imageFile = file; // Save the file for uploading
+    imagePreview = URL.createObjectURL(file);
     console.log("Selected or captured image:", file);
   } else {
     console.error("No file selected or captured.");
   }
 }
-
 
     async function uploadImage(imageFile, uid) {
       if (!imageFile) return null;
@@ -47,8 +55,7 @@
       }
     }
 
-
-  let debounceTimeout;
+let debounceTimeout;
   async function fetchBookSuggestions(query) {
     clearTimeout(debounceTimeout);
     if (!query) {
@@ -121,18 +128,23 @@
 
       await addDoc(collection(db, "posts"), postData);
 
-      // Reset form fields
-      bookTitle = "";
-      coffeeShop = "";
-      description = "";
-      imageFile = null;
-      selectedBook = null;
-
+      resetForm();
       goto('/explore');
     } catch (error) {
       console.error("Error creating post:", error);
       errorMessage = "Failed to create post.";
     }
+  }
+
+  function resetForm() {
+    bookTitle = "";
+    coffeeShop = "";
+    description = "";
+    imageFile = null;
+    imagePreview = null;
+    selectedBook = null;
+    suggestions = [];
+    showSuggestions = false;
   }
 </script>
 
@@ -240,16 +252,35 @@
           </div>
           <!-- Image Upload -->
           <div class="mb-3">
-            <label for="image" class="form-label">Upload Photo (Camera or File):</label>
-            <input
-            type="file"
-            id="image"
-            class="form-control"
-            accept="image/*"
-            capture={isMobile ? "environment" : undefined}
-            on:change={handleFileInput}
-            />          
-          </div>
+            <label for="image" class="form-label">Upload Image:</label>
+            {#if isMobile}
+              <div>
+                <input
+                  type="file"
+                  id="image"
+                  class="form-control"
+                  accept="image/*"
+                  capture="environment"
+                  on:change={handleFileInput}
+                />
+              </div>
+            {:else}
+              <div>
+                <input
+                  type="file"
+                  id="image"
+                  class="form-control"
+                  accept="image/*"
+                  on:change={handleFileInput}
+                />
+              </div>
+            {/if}
+            {#if imagePreview}
+              <div class="mt-3">
+                <img src={imagePreview} alt="" class="img-thumbnail" />
+              </div>
+            {/if}
+          </div>         
           <!-- Submit Button -->
           <button type="submit" class="btn btn-info w-100">Create Post</button>
         </form>
@@ -274,5 +305,11 @@
   }
   .list-group-item:hover {
     background-color: #f8f9fa;
+  }
+  .img-thumbnail {
+    max-width: 100%;
+    height: auto;
+    border: 2px solid #ddd;
+    border-radius: 8px;
   }
 </style>

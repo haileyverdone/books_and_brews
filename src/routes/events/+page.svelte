@@ -5,9 +5,12 @@
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
   import { db, storage } from "$lib/firebaseConfig";
 
-  let activeTab = 'view'; // 'view' for viewing events, 'create' for creating events
+  let activeTab = 'view'; 
   let events = [];
   let showModal = false;
+
+  let isMobile = false;
+  let imagePreview = null;
 
   let newEvent = {
     title: '',
@@ -33,70 +36,82 @@
   ? events.filter((event) => event.type === selectedFilter)
   : events;
 
+  onMount(() => {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+      userAgent.toLowerCase()
+    );
+    console.log("Is Mobile:", isMobile); 
+    fetchEvents();
+  });
+
  async function fetchEvents() {
     try {
       const eventsCollection = collection(db, "events");
       const snapshot = await getDocs(eventsCollection);
       events = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      console.log("Fetched events:", events); // Debugging
+      console.log("Fetched events:", events); 
     } catch (error) {
       console.error("Error fetching events:", error);
     }
   }
 
   function handleFileInput(event) {
-    newEvent.imageFile = event.target.files[0];
+    const file = event.target.files[0];
+    if (file) {
+      newEvent.imageFile = file;
+      imagePreview = URL.createObjectURL(file);
+      console.log("Selected File:", file); 
+    }
   }
 
   async function uploadImage(file) {
     if (!file) return null;
     try {
-      const fileRef = storageRef(storage, `events/${file.name}`);
+      const fileRef = storageRef(storage, `events/${Date.now()}_${file.name}`);
       await uploadBytes(fileRef, file);
       return await getDownloadURL(fileRef);
     } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('Failed to upload image.');
-      throw error;
+      console.error("Error uploading image:", error);
+      throw new Error("Image upload failed.");
     }
   }
 
   async function createEvent(event) {
   event.preventDefault();
 
+  if (!isLoggedIn) {
+    alert("You must be logged in to create an event.");
+    return;
+  }
+
+  if (!newEvent.title || !newEvent.location || !newEvent.date || !newEvent.description || !newEvent.type) {
+    alert("All fields are required.");
+    return;
+  }
+
   try {
-    if (!isLoggedIn) {
-      alert("You must be logged in to create an event.");
-      return;
-    }
+    const imageUrl = newEvent.imageFile
+      ? await uploadImage(newEvent.imageFile)
+      : null;
 
-    if (!newEvent.title || !newEvent.location || !newEvent.date || !newEvent.description || !newEvent.type) {
-      alert("All fields are required.");
-      return;
-    }
-
-    // Upload image to Firebase Storage
-    const imageUrl = await uploadImage(newEvent.imageFile);
-
-    // Create a new event without the `imageFile`
     const { imageFile, ...eventData } = newEvent;
 
-    // Save the event to Firestore
     const eventsCollection = collection(db, "events");
     await addDoc(eventsCollection, {
       ...eventData,
       imageUrl,
       createdAt: new Date().toISOString(),
-      userId: uid, // Include the user ID for tracking
+      userId: uid,
     });
 
     alert("Event created successfully!");
     resetForm();
-    showModal = false; // Close the modal
-    fetchEvents(); // Refresh the events list
+    showModal = false;
+    fetchEvents();
   } catch (error) {
     console.error("Error creating event:", error);
-    alert("Failed to create event. Please try again.");
+    alert("Event creation failed.");
   }
 }
 
@@ -114,6 +129,7 @@
       lng: null,
       type: '',
     };
+    imagePreview= null;
     locationSuggestions = [];
     selectedLocation = null;
   }
@@ -320,13 +336,34 @@
               </div>
               <div class="mb-3">
                 <label for="image" class="form-label">Upload Image:</label>
-                <input
-                  type="file"
-                  id="image"
-                  class="form-control"
-                  on:change={handleFileInput}
-                />
-              </div>
+                {#if isMobile}
+                  <div>
+                    <input
+                      type="file"
+                      id="image"
+                      class="form-control"
+                      accept="image/*"
+                      capture="environment"
+                      on:change={handleFileInput}
+                    />
+                  </div>
+                {:else}
+                  <div>
+                    <input
+                      type="file"
+                      id="image"
+                      class="form-control"
+                      accept="image/*"
+                      on:change={handleFileInput}
+                    />
+                  </div>
+                {/if}
+                {#if imagePreview}
+                  <div class="mt-3">
+                    <img src={imagePreview} alt="" class="img-thumbnail" />
+                  </div>
+                {/if}
+              </div>              
               <div class="mb-3">
                 <label for="type" class="form-label">Event Type:</label>
                 <select id="type" class="form-control" bind:value={newEvent.type} required>
@@ -373,10 +410,15 @@
 }
 
 .card-img-top {
-  height: 150px; /* Adjust as needed */
+  height: 150px; 
   object-fit: cover;
 }
-
+.img-thumbnail {
+  max-width: 100%;
+  height: auto;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+}
 
 
 </style>

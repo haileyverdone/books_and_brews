@@ -66,6 +66,7 @@ export const userStore = writable(null);
  */
 export function watchUser(userId) {
   console.log('watchUser called with userId:', userId);
+
   if (!userId) {
     console.error('User ID must be provided to watch the Firestore document.');
     userStore.set(null); // Clear the store if no userId is provided
@@ -77,27 +78,37 @@ export function watchUser(userId) {
 
   // Set up the Firestore listener
   const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
-    console.log('User document snapshot:', docSnapshot);
-    console.log('updating auth state with isLoading true');
-    authState.update((state) => {
-      return { ...state, isLoading: true };
-    });
     if (docSnapshot.exists()) {
-      userStore.set({ id: docSnapshot.id, ...docSnapshot.data() });
+      const userData = { id: docSnapshot.id, ...docSnapshot.data() };
+      console.log('User document snapshot:', userData);
+
+      // Update userStore
+      userStore.set(userData);
+
+      // Sync to authState
+      authState.update((state) => ({
+        ...state,
+        userProfile: userData,
+        isLoading: false,
+      }));
     } else {
       console.warn(`User document with ID ${userId} does not exist.`);
-      userStore.set(null); // Clear the store if the document is missing
+      userStore.set(null);
+      authState.update((state) => ({
+        ...state,
+        userProfile: null,
+        isLoading: false,
+      }));
     }
-    // Return a function to stop watching the document
-    console.log('updating auth state with isLoading false');
-    authState.update((state) => {
-      return { ...state, isLoading: false };
-    });
   }, (error) => {
     console.error('Error watching user document:', error);
     userStore.set(null);
+    authState.update((state) => ({
+      ...state,
+      userProfile: null,
+      isLoading: false,
+    }));
   });
 
-
-  return unsubscribe;
+  return unsubscribe; // Return the unsubscribe function
 }
